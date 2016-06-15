@@ -2,7 +2,7 @@
 {
     public interface IStateStorage : IStateProvider
     {
-        void SaveState(IState state);
-
+        void CreateOrUpdate(IState syncState);
+        void Delete(IState lastState);
     }
 }

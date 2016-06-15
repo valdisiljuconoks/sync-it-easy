@@ -49,12 +49,12 @@
     <Compile Include="Package\IStateProvider.cs" />
     <Compile Include="Package\OperationEnum.cs" />
     <Compile Include="Package\State.cs" />
-    <Compile Include="Package\IFallbackEntityProvider.cs" />
+    <Compile Include="Package\ILookupBySourceItem.cs" />
     <Compile Include="Package\IState.cs" />
     <Compile Include="Package\ISyncMap.cs" />
     <Compile Include="Package\IKeyMapStorage.cs" />
     <Compile Include="Package\IStateStorage.cs" />
-    <Compile Include="Package\IEntityProvider.cs" />
+    <Compile Include="Package\ILookupByKey.cs" />
     <Compile Include="Package\ISyncStateStore.cs" />
     <Compile Include="Package\IEntityPersister.cs" />
     <Compile Include="Package\SyncMap.cs" />

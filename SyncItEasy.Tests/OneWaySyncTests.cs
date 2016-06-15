@@ -5,6 +5,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SyncItEasy.Tests.Fakes;
 using SyncItEasy.Tests.Fakes.Generic;
 using SyncItEasy.Tests.Fakes.Poco;
+using SyncItEasy.Tests.Fakes.REST;
+using SyncItEasy.Tests.Fakes.Storage;
 
 namespace SyncItEasy.Tests
 {
@@ -14,12 +16,12 @@ namespace SyncItEasy.Tests
         [TestMethod]
         public void StressTest()
         {
-            var organizationStorage = new OrganizationStorage();
-            var companyStorage = new CompanyStorage();
+            var organizationDataSource = new OrganizationDataSource();
+            var companyDataTarget = new CompanyDataTarget();
             var stateStorage = new StateStorage();
-            var mapStorage = new KeyMapStorage();
+            var keyMapStorage = new KeyMapStorage();
 
-            var pk = 0;
+            var pk = 1;
             for (var times = 0; times < 100; times++)
             {
                 var random = new Random();
@@ -27,10 +29,6 @@ namespace SyncItEasy.Tests
                 {
                     var operation = random.Next(0, 5);
 
-                    if (times > 10)
-                    {
-                        break;
-                    }
 
                     switch (operation)
                     {
@@ -43,80 +41,81 @@ namespace SyncItEasy.Tests
                                 Name = Guid.NewGuid().ToString(),
                                 RegistrationNumber = Guid.NewGuid().ToString()
                             };
-                            organizationStorage.Storage.Add(user);
+                            OrganizationStorage.Storage.Add(user);
                             break;
                         case 2:
                         case 3:
                             //UPDATE
-                            if (organizationStorage.Storage.Count > 0)
+                            if (OrganizationStorage.Storage.Count > 0)
                             {
-                                var itemNr = random.Next(0, organizationStorage.Storage.Count);
-                                var update = organizationStorage.Storage[itemNr];
+                                var itemNr = random.Next(0, OrganizationStorage.Storage.Count);
+                                var update = OrganizationStorage.Storage[itemNr];
                                 update.Name = Guid.NewGuid().ToString();
                             }
                             break;
 
                         case 4:
                             //DELETE
-                            if (organizationStorage.Storage.Count > 0)
+                            if (OrganizationStorage.Storage.Count > 0)
                             {
-                                var itemNr = random.Next(0, organizationStorage.Storage.Count);
-                                organizationStorage.Storage.RemoveAt(itemNr);
+                                var itemNr = random.Next(0, OrganizationStorage.Storage.Count);
+                                OrganizationStorage.Storage.RemoveAt(itemNr);
                             }
                             break;
                     }
                 }
 
-                Action<string, string> nestedTasks = (aKey, bKey) =>
+                Action<string, string> nestedTasks = (sourceKey, targetKey) =>
                 {
-                    //var companyId = int.Parse(bKey);
+                    var organizationId = int.Parse(sourceKey);
+                    var employeeStorage = new EmployeeDataSource(organizationId);
 
-                    //var empLastState = new LastStateProvider<Employee>();
-                    //var syncMapProvider = new SyncMapProvider();
+                    var companyId = int.Parse(targetKey);
+                    var companyUserStorage = new CompanyUserDataTarget(companyId);
 
-                    //var employeeStorage = new EmployeeStorage
-                    //{
-                    //    Employees = sourceStorage.GetByKey(aKey).Employees
-                    //};
+                    var employeeSyncTask = new SyncTask<Employee, CompanyUser>(
+                        employeeStorage,
+                        companyUserStorage,
+                        stateStorage,
+                        keyMapStorage,
+                        null);
 
-
-                    //var companyUserStorage = new CompanyUserStorage(companyId);
-
-
-                    //   var employeeSyncTask = new SyncTask<Employee, CompanyUser>(
-                    //        employeeStorage,
-                    //        empLastState,
-                    //        employeeStorage, 
-                    //        companyUserStorage,
-                    //        null,
-                    //        companyUserStorage,
-                    //        syncMapProvider,
-                    //        null
-                    //);
-
-                    //   employeeSyncTask.Execute();
+                    //employeeSyncTask.Execute();
                 };
 
                 var orgSyncTask = new SyncTask<Organization, Company>(
-                    organizationStorage,
-                    companyStorage,
+                    organizationDataSource,
+                    companyDataTarget,
                     stateStorage,
-                    mapStorage
+                    keyMapStorage,
+                    nestedTasks
                     );
 
                 orgSyncTask.Execute();
             }
 
-            Assert.AreEqual(organizationStorage.Storage.Count, companyStorage.Storage.Count);
-            Assert.AreEqual(organizationStorage.Storage.Count, stateStorage.Storage.Count);
-            Assert.AreEqual(organizationStorage.Storage.Count, mapStorage.Storage.Count);
+            Assert.AreEqual(OrganizationStorage.Storage.Count, CompanyApi.Storage.Count);
+            Assert.AreEqual(OrganizationStorage.Storage.Count, stateStorage.Storage.Count);
+            Assert.AreEqual(OrganizationStorage.Storage.Count, keyMapStorage.Storage.Count);
 
-            foreach (var source in organizationStorage.Storage)
+            foreach (var organization in OrganizationStorage.Storage)
             {
-                var employee =
-                    companyStorage.Storage.FirstOrDefault(x => x.RegistrationNumber == source.RegistrationNumber);
+                var company = CompanyApi.Storage.SingleOrDefault(x => x.RegistrationNumber == organization.RegistrationNumber);
 
-                Assert.IsNotNull(employee);
+                Assert.IsNotNull(company);
+
+                var keyMap =
+                    keyMapStorage.Storage.SingleOrDefault(
+                        x => x.Key == organization.Id.ToString() && x.TargetKey == company.Id.ToString());
+
+                Assert.IsNotNull(keyMap);
+
+
+                var syncState =
+                   stateStorage.Storage.SingleOrDefault(
+                       x => x.Key == organization.Id.ToString());
+
+                Assert.IsNotNull(syncState);
             }
         }
     }

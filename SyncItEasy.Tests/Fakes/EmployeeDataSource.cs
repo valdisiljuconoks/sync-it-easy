@@ -3,13 +3,19 @@ using System.Linq;
 using ConsoleApplication17_pak.Package;
 using SyncItEasy.Tests.Fakes.Generic;
 using SyncItEasy.Tests.Fakes.Poco;
+using SyncItEasy.Tests.Fakes.Storage;
 
 namespace SyncItEasy.Tests.Fakes
 {
-    public class EmployeeStorage : IDataSource<Employee>
+    public class EmployeeDataSource : IDataSource<Employee>
     {
+        private readonly int _organizationId;
 
-        public List<Employee> Employees { get; set; }
+        public EmployeeDataSource(int organizationId)
+        {
+            _organizationId = organizationId;
+        }
+
 
         public IEnumerable<IState> GetStates(string partition = null)
         {
@@ -23,5 +29,8 @@ namespace SyncItEasy.Tests.Fakes
             return Employees
                 .FirstOrDefault(x => x.Id == id);
         }
+
+        public IEnumerable<Employee> Employees
+            => OrganizationStorage.Storage.Where(x => x.Id == _organizationId).SelectMany(x => x.Employees);
     }
 }

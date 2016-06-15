@@ -12,22 +12,24 @@ namespace SyncItEasy.Tests.Fakes.Generic
         {
             return Storage;
         }
-        public void SaveState(IState state)
+        
+        public void CreateOrUpdate(IState syncState)
         {
-            var existingState = Storage.FirstOrDefault(x => x.Key == state.Key);
+            var existingState = Storage.FirstOrDefault(x => x.Key == syncState.Key);
 
             if (existingState != null)
             {
-                if (state.Hash == null)
-                    Storage.Remove(existingState);
-                else
-                    existingState.Hash = state.Hash;
+                existingState.Hash = syncState.Hash;
             }
             else
             {
-                Storage.Add(state);
+                Storage.Add(syncState);
             }
         }
 
+        public void Delete(IState lastState)
+        {
+            Storage.Remove(lastState);
+        }
     }
 }

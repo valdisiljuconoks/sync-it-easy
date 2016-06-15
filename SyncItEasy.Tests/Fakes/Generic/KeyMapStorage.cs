@@ -10,16 +10,16 @@ namespace SyncItEasy.Tests.Fakes.Generic
 
         public ISyncMap GetBySourceKey(string key)
         {
-            return Storage.FirstOrDefault(x => x.SourceKey == key);
+            return Storage.FirstOrDefault(x => x.Key == key);
         }
 
         public void CreateOrUpdate(ISyncMap syncMap)
         {
-            var existingState = Storage.FirstOrDefault(x => x.Id == syncMap.Id);
+            var existingState = Storage.FirstOrDefault(x => x.Key == syncMap.Key);
 
             if (existingState != null)
             {
-                existingState.SourceKey = syncMap.SourceKey;
+                existingState.Key = syncMap.Key;
                 existingState.TargetKey = syncMap.TargetKey;
             }
             else

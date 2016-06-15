@@ -2,30 +2,22 @@
 using System.Linq;
 using ConsoleApplication17_pak.Package;
 using SyncItEasy.Tests.Fakes.Poco;
+using SyncItEasy.Tests.Fakes.REST;
 
 namespace SyncItEasy.Tests.Fakes
 {
-    public class CompanyStorage : IDataTarget<Organization, Company>
+    public class CompanyDataTarget : IDataTarget<Organization, Company>
     {
-        private static int _idCounter = 1;
 
-        public List<Company> Storage = new List<Company>();
-
-        public IEnumerable<IState> GetStates()
-        {
-            return Storage
-                .Select(x => new State<CompanyUser> {Key = x.Id.ToString(), Hash = x.Name});
-        }
 
         public string Insert(Organization source)
         {
             var company = new Company
             {
-                Id = _idCounter++,
                 RegistrationNumber = source.RegistrationNumber,
                 Name = source.Name
             };
-            Storage.Add(company);
+            company = CompanyApi.Put(company);
             return company.Id.ToString();
         }
 
@@ -38,23 +30,20 @@ namespace SyncItEasy.Tests.Fakes
 
         public void Delete(Company target)
         {
-            Storage.Remove(target);
+            CompanyApi.Delete(target.Id);
         }
 
         public Company GetByKey(string key)
         {
             var id = int.Parse(key);
-            return Storage
-                .FirstOrDefault(x => x.Id == id);
+            return CompanyApi.Get(id);
         }
 
-        public Company GetByData(StateChange<Organization, Company> stateChange)
+        public Company GetBySourceItem(Organization sourceItem)
         {
-            if (stateChange.SourceItem == null)
-                return null;
-
-            return Storage
-                .FirstOrDefault(x => x.RegistrationNumber == stateChange.SourceItem.RegistrationNumber);
+            return null;
+            //return Storage
+            //    .FirstOrDefault(x => x.RegistrationNumber == sourceItem.RegistrationNumber);
         }
     }
 }

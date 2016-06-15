@@ -9,19 +9,22 @@ namespace ConsoleApplication17_pak.Package
         protected readonly IDataSource<TEntityA> DataSource;
         protected readonly IDataTarget<TEntityA, TEntityB> DataTarget;
         protected readonly IKeyMapStorage KeyMapStorage;
+        protected readonly Action<string, string> ExecuteNestedTasks;
         protected readonly IStateStorage StateStorage;
 
         public SyncTask(
             IDataSource<TEntityA> dataSource,
             IDataTarget<TEntityA, TEntityB> dataTarget,
             IStateStorage stateStorage,
-            IKeyMapStorage keyMapStorage
+            IKeyMapStorage keyMapStorage,
+             Action<string, string> executeNestedTasks
             )
         {
             DataSource = dataSource;
             DataTarget = dataTarget;
             StateStorage = stateStorage;
             KeyMapStorage = keyMapStorage;
+            ExecuteNestedTasks = executeNestedTasks;
         }
 
         public void Execute()
@@ -118,12 +121,16 @@ namespace ConsoleApplication17_pak.Package
 
         private void LookupTargetItem(StateChange<TEntityA, TEntityB> stateChange)
         {
-            if (stateChange.TargetKey == null)
+            if (stateChange.TargetKey != null)
+            {
+                stateChange.TargetItem = DataTarget.GetByKey(stateChange.TargetKey);
                 return;
+            }
 
-            stateChange.TargetItem = DataTarget.GetByKey(stateChange.TargetKey);
-
-            //TODO: try alternative lookup
+            if (stateChange.SourceItem != null)
+            {
+                stateChange.TargetItem = DataTarget.GetBySourceItem(stateChange.SourceItem);
+            }
         }
 
         private void DetectDataOperation(StateChange<TEntityA, TEntityB> stateChange)
@@ -151,25 +158,20 @@ namespace ConsoleApplication17_pak.Package
             {
                 case OperationEnum.Insert:
                     stateChange.TargetKey = DataTarget.Insert(stateChange.SourceItem);
+                    ExecuteNestedTasks?.Invoke(stateChange.SourceKey, stateChange.TargetKey);
                     break;
                 case OperationEnum.Update:
                     stateChange.TargetKey = DataTarget.Update(stateChange.SourceItem, stateChange.TargetItem);
+                    ExecuteNestedTasks?.Invoke(stateChange.SourceKey, stateChange.TargetKey);
                     break;
                 case OperationEnum.Delete:
+                    ExecuteNestedTasks?.Invoke(stateChange.SourceKey, stateChange.TargetKey);
                     DataTarget.Delete(stateChange.TargetItem);
                     stateChange.TargetKey = null;
                     break;
                 case OperationEnum.None:
                     break;
             }
-        }
-
-        private void UpdateSyncState(StateChange<TEntityA, TEntityB> stateChange)
-        {
-            var state = stateChange.CurrentState ?? new State<TEntityA>();
-            state.Key = stateChange.SourceKey;
-            state.Hash = stateChange.CurrentState?.Hash;
-            StateStorage.SaveState(state);
         }
 
         private void UpdateSyncMap(StateChange<TEntityA, TEntityB> stateChange)
@@ -179,7 +181,7 @@ namespace ConsoleApplication17_pak.Package
                 case OperationEnum.Insert:
                 case OperationEnum.Update:
                     var syncMap = stateChange.SyncMap ??
-                                  new SyncMap {Id = Guid.NewGuid(), SourceKey = stateChange.SourceKey};
+                                  new SyncMap { Id = Guid.NewGuid(), Key = stateChange.SourceKey };
                     syncMap.TargetKey = stateChange.TargetKey;
                     KeyMapStorage.CreateOrUpdate(syncMap);
                     break;
@@ -189,6 +191,30 @@ namespace ConsoleApplication17_pak.Package
                     if (stateChange.SyncMap != null)
                     {
                         KeyMapStorage.Delete(stateChange.SyncMap);
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private void UpdateSyncState(StateChange<TEntityA, TEntityB> stateChange)
+        {
+            switch (stateChange.Operation)
+            {
+                case OperationEnum.Insert:
+                case OperationEnum.Update:
+
+                    var syncState = stateChange.LastState ?? stateChange.CurrentState;
+                    syncState.Hash = stateChange.CurrentState.Hash;
+                    StateStorage.CreateOrUpdate(syncState);
+                    break;
+
+                case OperationEnum.None:
+                case OperationEnum.Delete:
+                    if (stateChange.LastState != null)
+                    {
+                        StateStorage.Delete(stateChange.LastState);
                     }
                     break;
                 default:

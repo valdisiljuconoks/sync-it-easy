@@ -50,19 +50,22 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="Fakes\CompanyUserStorage.cs" />
+    <Compile Include="Fakes\CompanyUserDataTarget.cs" />
     <Compile Include="Fakes\Generic\BinaryChecksum.cs" />
-    <Compile Include="Fakes\EmployeeStorage.cs" />
+    <Compile Include="Fakes\EmployeeDataSource.cs" />
     <Compile Include="Fakes\Poco\Company.cs" />
-    <Compile Include="Fakes\CompanyStorage.cs" />
+    <Compile Include="Fakes\CompanyDataTarget.cs" />
     <Compile Include="Fakes\Generic\StateStorage.cs" />
     <Compile Include="Fakes\Poco\Organization.cs" />
     <Compile Include="Fakes\Generic\KeyMapStorage.cs" />
     <Compile Include="Fakes\Poco\Employee.cs" />
     <Compile Include="Fakes\Poco\CompanyUser.cs" />
+    <Compile Include="Fakes\REST\CompanyApi.cs" />
+    <Compile Include="Fakes\REST\CompanyUserApi.cs" />
+    <Compile Include="Fakes\Storage\OrganizationStorage.cs" />
     <Compile Include="OneWaySyncTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Fakes\OrganizationStorage.cs" />
+    <Compile Include="Fakes\OrganizationDataSource.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ConsoleApplication17-pak\ConsoleApplication17-pak.csproj">

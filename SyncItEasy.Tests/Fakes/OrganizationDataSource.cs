@@ -3,23 +3,23 @@ using System.Linq;
 using ConsoleApplication17_pak.Package;
 using SyncItEasy.Tests.Fakes.Generic;
 using SyncItEasy.Tests.Fakes.Poco;
+using SyncItEasy.Tests.Fakes.Storage;
 
 namespace SyncItEasy.Tests.Fakes
 {
-    public class OrganizationStorage : IDataSource<Organization>
+    public class OrganizationDataSource : IDataSource<Organization>
     {
-        public List<Organization> Storage = new List<Organization>();
 
         public IEnumerable<IState> GetStates(string partition = null)
         {
-            return Storage
+            return OrganizationStorage.Storage
                 .Select(x => BinaryChecksum.Calculate(x, x.Id));
         }
 
         public Organization GetByKey(string key)
         {
             var id = int.Parse(key);
-            return Storage
+            return OrganizationStorage.Storage
                 .FirstOrDefault(x => x.Id == id);
         }
     }

@@ -1,6 +1,6 @@
 ﻿namespace ConsoleApplication17_pak.Package
 {
-    public interface IDataSource<out TSource> : IStateProvider, IEntityProvider<TSource> where TSource : class
+    public interface IDataSource<out TSource> : IStateProvider, ILookupByKey<TSource> where TSource : class
     {
     }
 }
