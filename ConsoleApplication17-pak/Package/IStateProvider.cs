@@ -4,7 +4,7 @@ namespace ConsoleApplication17_pak.Package
 {
     public interface IStateProvider
     {
-        IEnumerable<IState> GetStates();
+        IEnumerable<IState> GetStates(string partition = null);
 
     }
 }

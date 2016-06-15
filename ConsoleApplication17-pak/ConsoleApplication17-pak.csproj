@@ -43,16 +43,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Extensions\DictionaryExtensions.cs" />
+    <Compile Include="Package\IDataSource.cs" />
+    <Compile Include="Package\IDataTarget.cs" />
     <Compile Include="Package\IStateProvider.cs" />
+    <Compile Include="Package\OperationEnum.cs" />
     <Compile Include="Package\State.cs" />
     <Compile Include="Package\IFallbackEntityProvider.cs" />
     <Compile Include="Package\IState.cs" />
     <Compile Include="Package\ISyncMap.cs" />
-    <Compile Include="Package\ISyncMapProvider.cs" />
-    <Compile Include="Package\ILastStateProvider.cs" />
+    <Compile Include="Package\IMapStorage.cs" />
+    <Compile Include="Package\IStateStorage.cs" />
     <Compile Include="Package\IEntityProvider.cs" />
-    <Compile Include="Package\IStateChange.cs" />
-    <Compile Include="Package\ICurrentStateProvider.cs" />
     <Compile Include="Package\ISyncStateStore.cs" />
     <Compile Include="Package\IEntityPersister.cs" />
     <Compile Include="Package\SyncMap.cs" />

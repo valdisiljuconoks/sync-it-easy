@@ -1,10 +1,10 @@
 namespace ConsoleApplication17_pak.Package
 {
-    public interface IEntityPersister<in TEntity, in TSource>
+    public interface IEntityPersister< in TSource, in TTarget>
     {
         string Insert(TSource source);
-        string Update(TSource source, TEntity target);
-        void Delete(TEntity target);
+        string Update(TSource source, TTarget target);
+        void Delete(TTarget target);
 
     }
 

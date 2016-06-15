@@ -1,6 +1,6 @@
 ﻿namespace ConsoleApplication17_pak.Package
 {
-    public interface ILastStateProvider : IStateProvider
+    public interface IStateStorage : IStateProvider
     {
         void SaveState(IState state);
 

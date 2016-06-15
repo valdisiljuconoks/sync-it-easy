@@ -6,14 +6,12 @@ using SyncItEasy.Tests.Fakes.Poco;
 
 namespace SyncItEasy.Tests.Fakes
 {
-    public class EmployeeStorage : IEntityProvider<Employee>, ICurrentStateProvider
+    public class EmployeeStorage : IDataSource<Employee>
     {
 
         public List<Employee> Employees { get; set; }
 
-
-
-        public IEnumerable<IState> GetStates()
+        public IEnumerable<IState> GetStates(string partition = null)
         {
             return Employees
                 .Select(x => BinaryChecksum.Calculate(x, x.Id));

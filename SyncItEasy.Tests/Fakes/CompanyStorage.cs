@@ -5,8 +5,7 @@ using SyncItEasy.Tests.Fakes.Poco;
 
 namespace SyncItEasy.Tests.Fakes
 {
-    public class CompanyStorage : IEntityProvider<Company>, ICurrentStateProvider,
-        IEntityPersister<Company, Organization>, IFallbackEntityProvider<Company, Organization>
+    public class CompanyStorage : IDataTarget<Organization, Company>
     {
         private static int _idCounter = 1;
 

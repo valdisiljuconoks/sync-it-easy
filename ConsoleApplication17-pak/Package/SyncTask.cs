@@ -1,159 +1,175 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace ConsoleApplication17_pak.Package
 {
     public class SyncTask<TEntityA, TEntityB> where TEntityA : class where TEntityB : class
     {
-        private readonly ICurrentStateProvider _aCurrentStateProvider;
-
-        private readonly ILastStateProvider _aLastStateProvider;
-
-        private readonly IEntityProvider<TEntityA> _aEntityProvider;
-        private readonly IEntityProvider<TEntityB> _bEntityProvider;
-
-        private readonly IFallbackEntityProvider<TEntityB, TEntityA> _bFallbackProvider;
-
-        private readonly IEntityPersister<TEntityB, TEntityA> _bEntityPersister;
-
-        private readonly ISyncMapProvider _syncMapProvider;
-        private readonly Action<string, string> _nestedTasks;
-        private readonly string _partitionKey;
+        protected readonly IDataSource<TEntityA> DataSource;
+        protected readonly IDataTarget<TEntityA, TEntityB> DataTarget;
+        protected readonly IMapStorage MapStorage;
+        protected readonly IStateStorage StateStorage;
 
         public SyncTask(
-            // gets current state data (Storage?)
-            ICurrentStateProvider aCurrentStateProvider,
-            // DDS?
-            ILastStateProvider aLastStateProvider,
-
-            IEntityProvider<TEntityA> aEntityProvider,
-            IEntityProvider<TEntityB> bEntityProvider,
-
-            IFallbackEntityProvider<TEntityB, TEntityA> bFallbackProvider,
-            IEntityPersister<TEntityB, TEntityA> bEntityPersister,
-
-            ISyncMapProvider syncMapProvider,
-
-            Action<string, string> nestedTasks
+            IDataSource<TEntityA> dataSource,
+            IDataTarget<TEntityA, TEntityB> dataTarget,
+            IStateStorage stateStorage,
+            IMapStorage mapStorage
             )
         {
-            _aCurrentStateProvider = aCurrentStateProvider;
-            _aLastStateProvider = aLastStateProvider;
-
-            _aEntityProvider = aEntityProvider;
-            _bEntityProvider = bEntityProvider;
-
-            _bFallbackProvider = bFallbackProvider;
-
-            _bEntityPersister = bEntityPersister;
-
-            _syncMapProvider = syncMapProvider;
-            _nestedTasks = nestedTasks;
+            DataSource = dataSource;
+            DataTarget = dataTarget;
+            StateStorage = stateStorage;
+            MapStorage = mapStorage;
         }
 
         public void Execute()
         {
-            var currentStates = _aCurrentStateProvider.GetStates();
-            var lastStates = _aLastStateProvider.GetStates();
-            var stateChanges = GetStateChanges(currentStates, lastStates).ToList();
+            var stateChanges = GetStateChanges();
 
-            var syncMaps = _syncMapProvider.GetSyncMap();
-
-            foreach (var hashChange in stateChanges)
+            foreach (var stateChange in stateChanges)
             {
-                var aKey = hashChange.CurrentState?.Key ?? hashChange.LastState?.Key;
+                ResolveSourceKey(stateChange);
+                ResolveTargetKey(stateChange);
 
-                var aSyncMap = syncMaps
-                    .SingleOrDefault(x => x.AKey == aKey);
+                LookupSourceItem(stateChange);
+                LookupTargetItem(stateChange);
 
-                var bKey = aSyncMap?.BKey;
+                DetectDataOperation(stateChange);
+                PerformDataOperation(stateChange);
 
-                TEntityA aItem = null;
-                TEntityB bItem = null;
-
-                if (aKey != null)
-                {
-                    aItem = _aEntityProvider.GetByKey(aKey);
-                }
-
-                if (bKey != null)
-                {
-                    bItem = _bEntityProvider.GetByKey(bKey);
-                }
-
-                if (bItem == null && aItem != null)
-                {
-                    bItem = _bFallbackProvider?.GetBySourceEntity(aItem);
-                }
-
-                // process changes
-                if (aItem != null && bItem == null)
-                {
-                    bKey = _bEntityPersister.Insert(aItem);
-                    _nestedTasks?.Invoke(aKey, bKey);
-                }
-                if (aItem != null && bItem != null)
-                {
-                    bKey = _bEntityPersister.Update(aItem, bItem);
-                    _nestedTasks?.Invoke(aKey, bKey);
-                }
-
-                if (aItem == null && bItem != null)
-                {
-                    _nestedTasks?.Invoke(aKey, bKey);
-                    _bEntityPersister.Delete(bItem);
-                    bKey = null;
-                }
-
-                if (aItem == null && bItem == null)
-                {
-                    bKey = null;
-                }
-
-                // create or update sync map
-                aSyncMap = aSyncMap ?? new SyncMap();
-                aSyncMap.AKey = aKey;
-                aSyncMap.BKey = bKey;
-                _syncMapProvider.StoreSyncMap(aSyncMap);
-
-                // create or update state
-                var hash = hashChange.CurrentState ?? new State<TEntityA>();
-                hash.Key = aKey;
-                hash.Hash = hashChange.CurrentState?.Hash;
-                _aLastStateProvider.SaveState(hash);
+                UpdateSyncMap(stateChange);
+                UpdateSyncState(stateChange);
             }
         }
 
-        private IEnumerable<IStateChange> GetStateChanges(IEnumerable<IState> aStates, IEnumerable<IState> lastStates)
+        protected virtual List<StateChange<TEntityA, TEntityB>> GetStateChanges()
         {
-            foreach (var aState in aStates)
-            {
-                var lastState = lastStates
-                    .FirstOrDefault(x => x.Key == aState.Key);
+            var result = new List<StateChange<TEntityA, TEntityB>>();
 
-                if (lastState?.Hash != aState.Hash)
+            var currentStates = DataSource.GetStates().ToList();
+            var lastStates = StateStorage.GetStates().ToList();
+
+            foreach (var currentState in currentStates)
+            {
+                var lastState = lastStates.FirstOrDefault(x => x.Key == currentState.Key);
+
+                if (lastState == null)
                 {
-                    yield return new StateChange
+                    var insert = new StateChange<TEntityA, TEntityB>
                     {
-                        LastState = lastState,
-                        CurrentState = aState
+                        CurrentState = currentState
                     };
+                    result.Add(insert);
+                }
+                else
+                {
+                    if (lastState.Hash != currentState.Hash)
+                    {
+                        var update = new StateChange<TEntityA, TEntityB>
+                        {
+                            CurrentState = currentState,
+                            LastState = lastState
+                        };
+                        result.Add(update);
+                    }
                 }
             }
 
-            foreach (var lastHash in lastStates)
+            foreach (var lastState in lastStates)
             {
-                var aHash = aStates.FirstOrDefault(x => x.Key == lastHash.Key);
+                var currentState = currentStates.FirstOrDefault(x => x.Key == lastState.Key);
 
-                if (aHash == null)
+                if (currentState == null)
                 {
-                    yield return new StateChange
+                    var delete = new StateChange<TEntityA, TEntityB>
                     {
-                        LastState = lastHash
+                        LastState = lastState
                     };
+                    result.Add(delete);
                 }
             }
+            return result;
+        }
+
+        private void ResolveSourceKey(StateChange<TEntityA, TEntityB> stateChange)
+        {
+            stateChange.SourceKey = stateChange.CurrentState?.Key ?? stateChange.LastState?.Key;
+        }
+        private void ResolveTargetKey(StateChange<TEntityA, TEntityB> stateChange)
+        {
+            if (stateChange.SourceKey == null)
+                return;
+
+            stateChange.SyncMap = MapStorage.GetByKey(stateChange.SourceKey);
+            ;
+            stateChange.TargetKey = stateChange.SyncMap?.TargetKey;
+        }
+        private void LookupSourceItem(StateChange<TEntityA, TEntityB> stateChange)
+        {
+            if (stateChange.SourceKey == null)
+                return;
+
+            stateChange.SourceItem = DataSource.GetByKey(stateChange.SourceKey);
+        }
+        private void LookupTargetItem(StateChange<TEntityA, TEntityB> stateChange)
+        {
+            if (stateChange.TargetKey == null)
+                return;
+
+            stateChange.TargetItem = DataTarget.GetByKey(stateChange.TargetKey);
+
+            //TODO: try alternative lookup
+        }
+        private void DetectDataOperation(StateChange<TEntityA, TEntityB> stateChange)
+        {
+            if (stateChange.SourceItem != null && stateChange.TargetItem == null)
+            {
+                stateChange.Operation = OperationEnum.Insert;
+                return;
+            }
+            if (stateChange.SourceItem != null && stateChange.TargetItem != null)
+            {
+                stateChange.Operation = OperationEnum.Update;
+                return;
+            }
+
+            if (stateChange.SourceItem == null && stateChange.TargetItem != null)
+            {
+                stateChange.Operation = OperationEnum.Delete;
+            }
+        }
+        private void PerformDataOperation(StateChange<TEntityA, TEntityB> stateChange)
+        {
+            switch (stateChange.Operation)
+            {
+                case OperationEnum.Insert:
+                    stateChange.TargetKey = DataTarget.Insert(stateChange.SourceItem);
+                    break;
+                case OperationEnum.Update:
+                    stateChange.TargetKey = DataTarget.Update(stateChange.SourceItem, stateChange.TargetItem);
+                    break;
+                case OperationEnum.Delete:
+                    DataTarget.Delete(stateChange.TargetItem);
+                    stateChange.TargetKey = null;
+                    break;
+                case OperationEnum.None:
+                    break;
+            }
+        }
+        private void UpdateSyncState(StateChange<TEntityA, TEntityB> stateChange)
+        {
+            var state = stateChange.CurrentState ?? new State<TEntityA>();
+            state.Key = stateChange.SourceKey;
+            state.Hash = stateChange.CurrentState?.Hash;
+            StateStorage.SaveState(state);
+        }
+        private void UpdateSyncMap(StateChange<TEntityA, TEntityB> stateChange)
+        {
+            stateChange.SyncMap = stateChange.SyncMap ?? new SyncMap();
+            stateChange.SyncMap.SourceKey = stateChange.SourceKey;
+            stateChange.SyncMap.TargetKey = stateChange.TargetKey;
+            MapStorage.StoreSyncMap(stateChange.SyncMap);
         }
     }
 }

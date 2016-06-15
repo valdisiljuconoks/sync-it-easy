@@ -5,7 +5,7 @@ using SyncItEasy.Tests.Fakes.Poco;
 
 namespace SyncItEasy.Tests.Fakes
 {
-    public class CompanyUserStorage : IEntityPersister<CompanyUser, Employee>, IEntityProvider<CompanyUser>
+    public class CompanyUserStorage : IDataTarget<Employee, CompanyUser>
     {
         private readonly int _companyId;
 

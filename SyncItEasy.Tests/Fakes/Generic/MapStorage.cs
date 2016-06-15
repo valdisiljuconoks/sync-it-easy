@@ -5,13 +5,18 @@ using ConsoleApplication17_pak.Package;
 
 namespace SyncItEasy.Tests.Fakes
 {
-    public class SyncMapProvider : ISyncMapProvider
+    public class MapStorage : IMapStorage
     {
         public List<ISyncMap> Storage = new List<ISyncMap>();
 
         public IEnumerable<ISyncMap> GetSyncMap()
         {
             return Storage;
+        }
+
+        public ISyncMap GetByKey(string key)
+        {
+            return Storage.FirstOrDefault(x => x.SourceKey == key);
         }
 
         public void StoreSyncMap(ISyncMap syncMap)
@@ -23,14 +28,14 @@ namespace SyncItEasy.Tests.Fakes
 
             if (existingState != null)
             {
-                if (syncMap.AKey == null || syncMap.BKey == null)
+                if (syncMap.SourceKey == null || syncMap.TargetKey == null)
                 {
                     Storage.Remove(existingState);
                 }
                 else
                 {
-                    existingState.AKey = syncMap.AKey;
-                    existingState.BKey = syncMap.BKey;
+                    existingState.SourceKey = syncMap.SourceKey;
+                    existingState.TargetKey = syncMap.TargetKey;
                 }
             }
             else

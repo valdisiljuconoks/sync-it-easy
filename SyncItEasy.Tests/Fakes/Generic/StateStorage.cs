@@ -4,11 +4,11 @@ using ConsoleApplication17_pak.Package;
 
 namespace SyncItEasy.Tests.Fakes
 {
-    public class LastStateProvider<T> : ILastStateProvider
+    public class StateStorage<T> : IStateStorage
     {
         public List<IState> Storage = new List<IState>();
 
-        public IEnumerable<IState> GetStates()
+        public IEnumerable<IState> GetStates(string partition = null)
         {
             return Storage;
         }

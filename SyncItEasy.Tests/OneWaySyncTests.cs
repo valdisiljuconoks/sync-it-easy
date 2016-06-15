@@ -15,8 +15,8 @@ namespace SyncItEasy.Tests
         {
             var orgStorage = new OrganizationStorage();
             var companyStorage = new CompanyStorage();
-            var stateStorage = new LastStateProvider<Organization>();
-            var mapStorage = new SyncMapProvider();
+            var stateStorage = new StateStorage<Organization>();
+            var mapStorage = new MapStorage();
 
             var pk = 0;
             for (var times = 0; times < 100; times++)
@@ -93,13 +93,9 @@ namespace SyncItEasy.Tests
 
                 var orgSyncTask = new SyncTask<Organization, Company>(
                     orgStorage,
+                    companyStorage,
                     stateStorage,
-                    orgStorage,
-                    companyStorage,
-                    null,
-                    companyStorage,
-                    mapStorage,
-                    nestedTasks
+                    mapStorage
                     );
 
                 orgSyncTask.Execute();
