@@ -26,6 +26,11 @@ namespace SyncItEasy.Tests
                 {
                     var operation = random.Next(0, 5);
 
+                    if (times > 10)
+                    {
+                        break;
+                    }
+
                     switch (operation)
                     {
                         case 0:

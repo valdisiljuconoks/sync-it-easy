@@ -14,34 +14,31 @@ namespace SyncItEasy.Tests.Fakes
             return Storage;
         }
 
-        public ISyncMap GetByKey(string key)
+        public ISyncMap GetBySourceKey(string key)
         {
             return Storage.FirstOrDefault(x => x.SourceKey == key);
         }
 
-        public void StoreSyncMap(ISyncMap syncMap)
+        public void CreateOrUpdate(ISyncMap syncMap)
         {
-            if (syncMap.Id == Guid.Empty)
-                syncMap.Id = Guid.NewGuid();
-
             var existingState = Storage.FirstOrDefault(x => x.Id == syncMap.Id);
 
             if (existingState != null)
             {
-                if (syncMap.SourceKey == null || syncMap.TargetKey == null)
-                {
-                    Storage.Remove(existingState);
-                }
-                else
-                {
-                    existingState.SourceKey = syncMap.SourceKey;
-                    existingState.TargetKey = syncMap.TargetKey;
-                }
+                existingState.SourceKey = syncMap.SourceKey;
+                existingState.TargetKey = syncMap.TargetKey;
             }
             else
             {
                 Storage.Add(syncMap);
             }
         }
+
+        public void Delete(ISyncMap map)
+        {
+            Storage.Remove(map);
+        }
+
+
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ConsoleApplication17_pak.Package
@@ -101,7 +102,7 @@ namespace ConsoleApplication17_pak.Package
             if (stateChange.SourceKey == null)
                 return;
 
-            stateChange.SyncMap = MapStorage.GetByKey(stateChange.SourceKey);
+            stateChange.SyncMap = MapStorage.GetBySourceKey(stateChange.SourceKey);
             ;
             stateChange.TargetKey = stateChange.SyncMap?.TargetKey;
         }
@@ -166,10 +167,25 @@ namespace ConsoleApplication17_pak.Package
         }
         private void UpdateSyncMap(StateChange<TEntityA, TEntityB> stateChange)
         {
-            stateChange.SyncMap = stateChange.SyncMap ?? new SyncMap();
-            stateChange.SyncMap.SourceKey = stateChange.SourceKey;
-            stateChange.SyncMap.TargetKey = stateChange.TargetKey;
-            MapStorage.StoreSyncMap(stateChange.SyncMap);
+            switch (stateChange.Operation)
+            {
+                case OperationEnum.Insert:
+                case OperationEnum.Update:
+                    var syncMap = stateChange.SyncMap ?? new SyncMap { Id = Guid.NewGuid(), SourceKey = stateChange.SourceKey };
+                    syncMap.TargetKey = stateChange.TargetKey;
+                    MapStorage.CreateOrUpdate(syncMap);
+                    break;
+
+                case OperationEnum.None:
+                case OperationEnum.Delete:
+                    if (stateChange.SyncMap != null)
+                    {
+                        MapStorage.Delete(stateChange.SyncMap);
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
     }
 }
