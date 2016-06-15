@@ -48,9 +48,13 @@ namespace SyncItEasy.Tests.Fakes
                 .FirstOrDefault(x => x.Id == id);
         }
 
-        public Company GetBySourceEntity(Organization source)
+        public Company GetByData(StateChange<Organization, Company> stateChange)
         {
-            return Storage.FirstOrDefault(x => x.RegistrationNumber == source.RegistrationNumber);
+            if (stateChange.SourceItem == null)
+                return null;
+
+            return Storage
+                .FirstOrDefault(x => x.RegistrationNumber == stateChange.SourceItem.RegistrationNumber);
         }
     }
 }

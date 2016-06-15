@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using ConsoleApplication17_pak.Package;
 
-namespace SyncItEasy.Tests.Fakes
+namespace SyncItEasy.Tests.Fakes.Generic
 {
-    public class MapStorage : IMapStorage
+    public class KeyMapStorage : IKeyMapStorage
     {
         public List<ISyncMap> Storage = new List<ISyncMap>();
-
-        public IEnumerable<ISyncMap> GetSyncMap()
-        {
-            return Storage;
-        }
 
         public ISyncMap GetBySourceKey(string key)
         {
@@ -38,7 +32,5 @@ namespace SyncItEasy.Tests.Fakes
         {
             Storage.Remove(map);
         }
-
-
     }
 }

@@ -1,7 +1,7 @@
 namespace ConsoleApplication17_pak.Package
 {
-    public interface IFallbackEntityProvider<out TEntity, in TSource> where TEntity : class where TSource: class
+    public interface IFallbackEntityProvider<TSource, TTarget> where TSource : class where TTarget : class
     {
-        TEntity GetBySourceEntity(TSource source);
+        TTarget GetByData(StateChange<TSource, TTarget> stateChange);
     }
 }

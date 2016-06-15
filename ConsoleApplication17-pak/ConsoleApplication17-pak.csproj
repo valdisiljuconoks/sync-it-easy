@@ -52,7 +52,7 @@
     <Compile Include="Package\IFallbackEntityProvider.cs" />
     <Compile Include="Package\IState.cs" />
     <Compile Include="Package\ISyncMap.cs" />
-    <Compile Include="Package\IMapStorage.cs" />
+    <Compile Include="Package\IKeyMapStorage.cs" />
     <Compile Include="Package\IStateStorage.cs" />
     <Compile Include="Package\IEntityProvider.cs" />
     <Compile Include="Package\ISyncStateStore.cs" />

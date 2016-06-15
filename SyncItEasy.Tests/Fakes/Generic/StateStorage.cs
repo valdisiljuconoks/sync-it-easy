@@ -2,9 +2,9 @@
 using System.Linq;
 using ConsoleApplication17_pak.Package;
 
-namespace SyncItEasy.Tests.Fakes
+namespace SyncItEasy.Tests.Fakes.Generic
 {
-    public class StateStorage<T> : IStateStorage
+    public class StateStorage : IStateStorage
     {
         public List<IState> Storage = new List<IState>();
 

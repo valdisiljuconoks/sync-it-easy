@@ -57,7 +57,7 @@
     <Compile Include="Fakes\CompanyStorage.cs" />
     <Compile Include="Fakes\Generic\StateStorage.cs" />
     <Compile Include="Fakes\Poco\Organization.cs" />
-    <Compile Include="Fakes\Generic\MapStorage.cs" />
+    <Compile Include="Fakes\Generic\KeyMapStorage.cs" />
     <Compile Include="Fakes\Poco\Employee.cs" />
     <Compile Include="Fakes\Poco\CompanyUser.cs" />
     <Compile Include="OneWaySyncTests.cs" />

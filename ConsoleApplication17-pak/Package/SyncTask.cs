@@ -8,20 +8,20 @@ namespace ConsoleApplication17_pak.Package
     {
         protected readonly IDataSource<TEntityA> DataSource;
         protected readonly IDataTarget<TEntityA, TEntityB> DataTarget;
-        protected readonly IMapStorage MapStorage;
+        protected readonly IKeyMapStorage KeyMapStorage;
         protected readonly IStateStorage StateStorage;
 
         public SyncTask(
             IDataSource<TEntityA> dataSource,
             IDataTarget<TEntityA, TEntityB> dataTarget,
             IStateStorage stateStorage,
-            IMapStorage mapStorage
+            IKeyMapStorage keyMapStorage
             )
         {
             DataSource = dataSource;
             DataTarget = dataTarget;
             StateStorage = stateStorage;
-            MapStorage = mapStorage;
+            KeyMapStorage = keyMapStorage;
         }
 
         public void Execute()
@@ -97,15 +97,17 @@ namespace ConsoleApplication17_pak.Package
         {
             stateChange.SourceKey = stateChange.CurrentState?.Key ?? stateChange.LastState?.Key;
         }
+
         private void ResolveTargetKey(StateChange<TEntityA, TEntityB> stateChange)
         {
             if (stateChange.SourceKey == null)
                 return;
 
-            stateChange.SyncMap = MapStorage.GetBySourceKey(stateChange.SourceKey);
+            stateChange.SyncMap = KeyMapStorage.GetBySourceKey(stateChange.SourceKey);
             ;
             stateChange.TargetKey = stateChange.SyncMap?.TargetKey;
         }
+
         private void LookupSourceItem(StateChange<TEntityA, TEntityB> stateChange)
         {
             if (stateChange.SourceKey == null)
@@ -113,6 +115,7 @@ namespace ConsoleApplication17_pak.Package
 
             stateChange.SourceItem = DataSource.GetByKey(stateChange.SourceKey);
         }
+
         private void LookupTargetItem(StateChange<TEntityA, TEntityB> stateChange)
         {
             if (stateChange.TargetKey == null)
@@ -122,6 +125,7 @@ namespace ConsoleApplication17_pak.Package
 
             //TODO: try alternative lookup
         }
+
         private void DetectDataOperation(StateChange<TEntityA, TEntityB> stateChange)
         {
             if (stateChange.SourceItem != null && stateChange.TargetItem == null)
@@ -140,6 +144,7 @@ namespace ConsoleApplication17_pak.Package
                 stateChange.Operation = OperationEnum.Delete;
             }
         }
+
         private void PerformDataOperation(StateChange<TEntityA, TEntityB> stateChange)
         {
             switch (stateChange.Operation)
@@ -158,6 +163,7 @@ namespace ConsoleApplication17_pak.Package
                     break;
             }
         }
+
         private void UpdateSyncState(StateChange<TEntityA, TEntityB> stateChange)
         {
             var state = stateChange.CurrentState ?? new State<TEntityA>();
@@ -165,22 +171,24 @@ namespace ConsoleApplication17_pak.Package
             state.Hash = stateChange.CurrentState?.Hash;
             StateStorage.SaveState(state);
         }
+
         private void UpdateSyncMap(StateChange<TEntityA, TEntityB> stateChange)
         {
             switch (stateChange.Operation)
             {
                 case OperationEnum.Insert:
                 case OperationEnum.Update:
-                    var syncMap = stateChange.SyncMap ?? new SyncMap { Id = Guid.NewGuid(), SourceKey = stateChange.SourceKey };
+                    var syncMap = stateChange.SyncMap ??
+                                  new SyncMap {Id = Guid.NewGuid(), SourceKey = stateChange.SourceKey};
                     syncMap.TargetKey = stateChange.TargetKey;
-                    MapStorage.CreateOrUpdate(syncMap);
+                    KeyMapStorage.CreateOrUpdate(syncMap);
                     break;
 
                 case OperationEnum.None:
                 case OperationEnum.Delete:
                     if (stateChange.SyncMap != null)
                     {
-                        MapStorage.Delete(stateChange.SyncMap);
+                        KeyMapStorage.Delete(stateChange.SyncMap);
                     }
                     break;
                 default:

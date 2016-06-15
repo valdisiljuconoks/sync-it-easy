@@ -69,5 +69,11 @@ namespace SyncItEasy.Tests.Fakes
             var id = int.Parse(key);
             return RestGet(_companyId, id);
         }
+
+        public CompanyUser GetByData(StateChange<Employee, CompanyUser> stateChange)
+        {
+            //TODO: add rules!
+            return null;
+        }
     }
 }

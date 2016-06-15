@@ -3,6 +3,7 @@ using System.Linq;
 using ConsoleApplication17_pak.Package;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SyncItEasy.Tests.Fakes;
+using SyncItEasy.Tests.Fakes.Generic;
 using SyncItEasy.Tests.Fakes.Poco;
 
 namespace SyncItEasy.Tests
@@ -13,10 +14,10 @@ namespace SyncItEasy.Tests
         [TestMethod]
         public void StressTest()
         {
-            var orgStorage = new OrganizationStorage();
+            var organizationStorage = new OrganizationStorage();
             var companyStorage = new CompanyStorage();
-            var stateStorage = new StateStorage<Organization>();
-            var mapStorage = new MapStorage();
+            var stateStorage = new StateStorage();
+            var mapStorage = new KeyMapStorage();
 
             var pk = 0;
             for (var times = 0; times < 100; times++)
@@ -42,25 +43,25 @@ namespace SyncItEasy.Tests
                                 Name = Guid.NewGuid().ToString(),
                                 RegistrationNumber = Guid.NewGuid().ToString()
                             };
-                            orgStorage.Storage.Add(user);
+                            organizationStorage.Storage.Add(user);
                             break;
                         case 2:
                         case 3:
                             //UPDATE
-                            if (orgStorage.Storage.Count > 0)
+                            if (organizationStorage.Storage.Count > 0)
                             {
-                                var itemNr = random.Next(0, orgStorage.Storage.Count);
-                                var update = orgStorage.Storage[itemNr];
+                                var itemNr = random.Next(0, organizationStorage.Storage.Count);
+                                var update = organizationStorage.Storage[itemNr];
                                 update.Name = Guid.NewGuid().ToString();
                             }
                             break;
 
                         case 4:
                             //DELETE
-                            if (orgStorage.Storage.Count > 0)
+                            if (organizationStorage.Storage.Count > 0)
                             {
-                                var itemNr = random.Next(0, orgStorage.Storage.Count);
-                                orgStorage.Storage.RemoveAt(itemNr);
+                                var itemNr = random.Next(0, organizationStorage.Storage.Count);
+                                organizationStorage.Storage.RemoveAt(itemNr);
                             }
                             break;
                     }
@@ -97,7 +98,7 @@ namespace SyncItEasy.Tests
                 };
 
                 var orgSyncTask = new SyncTask<Organization, Company>(
-                    orgStorage,
+                    organizationStorage,
                     companyStorage,
                     stateStorage,
                     mapStorage
@@ -106,11 +107,11 @@ namespace SyncItEasy.Tests
                 orgSyncTask.Execute();
             }
 
-            Assert.AreEqual(orgStorage.Storage.Count, companyStorage.Storage.Count);
-            Assert.AreEqual(orgStorage.Storage.Count, stateStorage.Storage.Count);
-            Assert.AreEqual(orgStorage.Storage.Count, mapStorage.Storage.Count);
+            Assert.AreEqual(organizationStorage.Storage.Count, companyStorage.Storage.Count);
+            Assert.AreEqual(organizationStorage.Storage.Count, stateStorage.Storage.Count);
+            Assert.AreEqual(organizationStorage.Storage.Count, mapStorage.Storage.Count);
 
-            foreach (var source in orgStorage.Storage)
+            foreach (var source in organizationStorage.Storage)
             {
                 var employee =
                     companyStorage.Storage.FirstOrDefault(x => x.RegistrationNumber == source.RegistrationNumber);
