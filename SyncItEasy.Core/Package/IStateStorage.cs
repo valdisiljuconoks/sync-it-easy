@@ -1,6 +1,6 @@
-﻿namespace ConsoleApplication17_pak.Package
+﻿namespace SyncItEasy.Core.Package
 {
-    public interface IStateStorage : IStateProvider
+    public interface IStateStorage : IStoredStateProvider
     {
         void CreateOrUpdate(IState syncState);
         void Delete(IState lastState);

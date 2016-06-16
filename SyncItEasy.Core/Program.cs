@@ -1,4 +1,4 @@
-﻿namespace ConsoleApplication17_pak
+﻿namespace SyncItEasy.Core
 {
     internal class Program
     {

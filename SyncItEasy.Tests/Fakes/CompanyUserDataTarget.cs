@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using ConsoleApplication17_pak.Package;
+﻿using SyncItEasy.Core.Package;
 using SyncItEasy.Tests.Fakes.Poco;
 using SyncItEasy.Tests.Fakes.REST;
 
@@ -21,7 +19,7 @@ namespace SyncItEasy.Tests.Fakes
             {
                 CompanyId = _companyId,
                 FirstName = source.Firstname,
-                LastName = source.Lastname,
+                LastName = source.Lastname
             };
             target = CompanyUserApi.Put(_companyId, target);
             return target.Id.ToString();

@@ -1,8 +1,8 @@
-namespace ConsoleApplication17_pak.Package
+namespace SyncItEasy.Core.Package
 {
     public interface IState
     {
-        string Entity { get; }
+        string ProcessKey { get; set; }
         string Key { get; set; }
         string Hash { get; set; }
     }

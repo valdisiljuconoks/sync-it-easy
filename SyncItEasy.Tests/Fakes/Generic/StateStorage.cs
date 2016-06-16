@@ -1,21 +1,22 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using ConsoleApplication17_pak.Package;
+using SyncItEasy.Core.Package;
 
 namespace SyncItEasy.Tests.Fakes.Generic
 {
     public class StateStorage : IStateStorage
     {
-        public List<IState> Storage = new List<IState>();
+        public static List<IState> Storage = new List<IState>();
 
-        public IEnumerable<IState> GetStates(string partition = null)
+        public IEnumerable<IState> GetStates(string processKey)
         {
-            return Storage;
+            return Storage.Where(x => x.ProcessKey == processKey);
         }
-        
+
         public void CreateOrUpdate(IState syncState)
         {
-            var existingState = Storage.FirstOrDefault(x => x.Key == syncState.Key);
+            var existingState =
+                Storage.SingleOrDefault(x => x.ProcessKey == syncState.ProcessKey && x.Key == syncState.Key);
 
             if (existingState != null)
             {

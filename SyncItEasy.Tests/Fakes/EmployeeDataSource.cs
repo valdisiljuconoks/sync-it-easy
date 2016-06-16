@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using ConsoleApplication17_pak.Package;
+using SyncItEasy.Core.Package;
 using SyncItEasy.Tests.Fakes.Generic;
 using SyncItEasy.Tests.Fakes.Poco;
 using SyncItEasy.Tests.Fakes.Storage;
@@ -16,8 +16,11 @@ namespace SyncItEasy.Tests.Fakes
             _organizationId = organizationId;
         }
 
+        public IEnumerable<Employee> Employees
+            => OrganizationStorage.Storage.Where(x => x.Id == _organizationId).SelectMany(x => x.Employees);
 
-        public IEnumerable<IState> GetStates(string partition = null)
+
+        public IEnumerable<IState> GetStates()
         {
             return Employees
                 .Select(x => BinaryChecksum.Calculate(x, x.Id));
@@ -29,8 +32,5 @@ namespace SyncItEasy.Tests.Fakes
             return Employees
                 .FirstOrDefault(x => x.Id == id);
         }
-
-        public IEnumerable<Employee> Employees
-            => OrganizationStorage.Storage.Where(x => x.Id == _organizationId).SelectMany(x => x.Employees);
     }
 }

@@ -1,10 +1,11 @@
 using System;
 
-namespace ConsoleApplication17_pak.Package
+namespace SyncItEasy.Core.Package
 {
     public interface ISyncMap
     {
         Guid Id { get; set; }
+        string ProcessKey { get; set; }
         string Key { get; set; }
         string TargetKey { get; set; }
     }

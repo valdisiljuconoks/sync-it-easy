@@ -31,8 +31,10 @@ namespace SyncItEasy.Tests.Fakes.REST
 
         public static Company Post(int companyId, Company company)
         {
-            Storage.Add(company);
-            return Get(companyId);
+            var existing = Get(companyId);
+            existing.Name = company.Name;
+            existing.RegistrationNumber = company.RegistrationNumber;
+            return existing;
         }
 
         public static void Delete(int companyId)

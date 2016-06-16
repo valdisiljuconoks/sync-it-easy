@@ -1,4 +1,4 @@
-namespace ConsoleApplication17_pak.Package
+namespace SyncItEasy.Core.Package
 {
     public interface ISyncStateStore
     {

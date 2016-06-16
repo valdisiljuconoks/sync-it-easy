@@ -1,21 +1,21 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using ConsoleApplication17_pak.Package;
+using SyncItEasy.Core.Package;
 
 namespace SyncItEasy.Tests.Fakes.Generic
 {
     public class KeyMapStorage : IKeyMapStorage
     {
-        public List<ISyncMap> Storage = new List<ISyncMap>();
+        public static List<ISyncMap> Storage = new List<ISyncMap>();
 
-        public ISyncMap GetBySourceKey(string key)
+        public ISyncMap GetBySourceKey(string partitionKey, string key)
         {
-            return Storage.FirstOrDefault(x => x.Key == key);
+            return Storage.SingleOrDefault(x => x.ProcessKey == partitionKey && x.Key == key);
         }
 
         public void CreateOrUpdate(ISyncMap syncMap)
         {
-            var existingState = Storage.FirstOrDefault(x => x.Key == syncMap.Key);
+            var existingState = Storage.SingleOrDefault(x => x.Key == syncMap.Key);
 
             if (existingState != null)
             {

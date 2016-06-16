@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApplication17-pak", "ConsoleApplication17-pak\ConsoleApplication17-pak.csproj", "{4D3289A2-1B10-4D3C-9651-281E3271411C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncItEasy.Core", "SyncItEasy.Core\SyncItEasy.Core.csproj", "{4D3289A2-1B10-4D3C-9651-281E3271411C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncItEasy.Tests", "SyncItEasy.Tests\SyncItEasy.Tests.csproj", "{70CBB33C-8071-4D4F-861F-7208AE3C30E0}"
 EndProject

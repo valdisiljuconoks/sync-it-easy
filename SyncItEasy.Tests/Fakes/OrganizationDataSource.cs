@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using ConsoleApplication17_pak.Package;
+using SyncItEasy.Core.Package;
 using SyncItEasy.Tests.Fakes.Generic;
 using SyncItEasy.Tests.Fakes.Poco;
 using SyncItEasy.Tests.Fakes.Storage;
@@ -9,8 +9,7 @@ namespace SyncItEasy.Tests.Fakes
 {
     public class OrganizationDataSource : IDataSource<Organization>
     {
-
-        public IEnumerable<IState> GetStates(string partition = null)
+        public IEnumerable<IState> GetStates()
         {
             return OrganizationStorage.Storage
                 .Select(x => BinaryChecksum.Calculate(x, x.Id));

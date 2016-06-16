@@ -2,7 +2,7 @@
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography;
-using ConsoleApplication17_pak.Package;
+using SyncItEasy.Core.Package;
 
 namespace SyncItEasy.Tests.Fakes.Generic
 {
@@ -13,7 +13,7 @@ namespace SyncItEasy.Tests.Fakes.Generic
         }
 
 
-        public string Entity { get; set; }
+        public string ProcessKey { get; set; }
         public string Key { get; set; }
         public string Hash { get; set; }
 
@@ -30,11 +30,16 @@ namespace SyncItEasy.Tests.Fakes.Generic
 
                 return new BinaryChecksum
                 {
-                    Entity = value.GetType().FullName,
+                    ProcessKey = value.GetType().FullName,
                     Key = key.ToString(),
                     Hash = BitConverter.ToString(hashBytes)
                 };
             }
+        }
+
+        public override string ToString()
+        {
+            return $"{ProcessKey}:{Key} => {Hash}";
         }
     }
 }

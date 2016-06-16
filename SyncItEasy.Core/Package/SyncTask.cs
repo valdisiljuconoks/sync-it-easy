@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Common.Logging;
 
-namespace ConsoleApplication17_pak.Package
+namespace SyncItEasy.Core.Package
 {
     public class SyncTask<TEntityA, TEntityB> where TEntityA : class where TEntityB : class
     {
         protected readonly IDataSource<TEntityA> DataSource;
         protected readonly IDataTarget<TEntityA, TEntityB> DataTarget;
-        protected readonly IKeyMapStorage KeyMapStorage;
         protected readonly Action<string, string> ExecuteNestedTasks;
+        protected readonly IKeyMapStorage KeyMapStorage;
+        protected readonly string PartitionKey;
         protected readonly IStateStorage StateStorage;
 
         public SyncTask(
@@ -17,7 +19,8 @@ namespace ConsoleApplication17_pak.Package
             IDataTarget<TEntityA, TEntityB> dataTarget,
             IStateStorage stateStorage,
             IKeyMapStorage keyMapStorage,
-             Action<string, string> executeNestedTasks
+            Action<string, string> executeNestedTasks,
+            string partitionKey
             )
         {
             DataSource = dataSource;
@@ -25,10 +28,18 @@ namespace ConsoleApplication17_pak.Package
             StateStorage = stateStorage;
             KeyMapStorage = keyMapStorage;
             ExecuteNestedTasks = executeNestedTasks;
+            PartitionKey = partitionKey;
         }
+
+
+        public ILog Log => LogManager.GetLogger(ProcessKey);
+
+        private string ProcessKey => $"{typeof(TEntityA).Name}=>{typeof(TEntityB).Name}:{PartitionKey ?? "root"}";
 
         public void Execute()
         {
+            Log.Debug($"==== Sync started ====");
+
             var stateChanges = GetStateChanges();
 
             foreach (var stateChange in stateChanges)
@@ -45,6 +56,8 @@ namespace ConsoleApplication17_pak.Package
                 UpdateSyncMap(stateChange);
                 UpdateSyncState(stateChange);
             }
+
+            Log.Debug($"==== Sync done ====");
         }
 
         protected virtual List<StateChange<TEntityA, TEntityB>> GetStateChanges()
@@ -52,7 +65,7 @@ namespace ConsoleApplication17_pak.Package
             var result = new List<StateChange<TEntityA, TEntityB>>();
 
             var currentStates = DataSource.GetStates().ToList();
-            var lastStates = StateStorage.GetStates().ToList();
+            var lastStates = StateStorage.GetStates(ProcessKey).ToList();
 
             foreach (var currentState in currentStates)
             {
@@ -65,6 +78,8 @@ namespace ConsoleApplication17_pak.Package
                         CurrentState = currentState
                     };
                     result.Add(insert);
+                    Log.Debug(
+                        $"Theoretical INSERT: CurrentState = '{insert.CurrentState}', LastState = '{insert.LastState}'");
                 }
                 else
                 {
@@ -76,13 +91,15 @@ namespace ConsoleApplication17_pak.Package
                             LastState = lastState
                         };
                         result.Add(update);
+                        Log.Debug(
+                            $"Theoretical UPDATE: CurrentState = '{update.CurrentState}', LastState = '{update.LastState}'");
                     }
                 }
             }
 
             foreach (var lastState in lastStates)
             {
-                var currentState = currentStates.FirstOrDefault(x => x.Key == lastState.Key);
+                var currentState = currentStates.SingleOrDefault(x => x.Key == lastState.Key);
 
                 if (currentState == null)
                 {
@@ -91,6 +108,8 @@ namespace ConsoleApplication17_pak.Package
                         LastState = lastState
                     };
                     result.Add(delete);
+                    Log.Debug(
+                        $"Theoretical DELETE: CurrentState = '{delete.CurrentState}', LastState = '{delete.LastState}'");
                 }
             }
             return result;
@@ -106,7 +125,7 @@ namespace ConsoleApplication17_pak.Package
             if (stateChange.SourceKey == null)
                 return;
 
-            stateChange.SyncMap = KeyMapStorage.GetBySourceKey(stateChange.SourceKey);
+            stateChange.SyncMap = KeyMapStorage.GetBySourceKey(ProcessKey, stateChange.SourceKey);
             ;
             stateChange.TargetKey = stateChange.SyncMap?.TargetKey;
         }
@@ -148,6 +167,7 @@ namespace ConsoleApplication17_pak.Package
 
             if (stateChange.SourceItem == null && stateChange.TargetItem != null)
             {
+                Log.Debug($"DELETE: TargetKey = '{stateChange.TargetKey}'");
                 stateChange.Operation = OperationEnum.Delete;
             }
         }
@@ -158,13 +178,16 @@ namespace ConsoleApplication17_pak.Package
             {
                 case OperationEnum.Insert:
                     stateChange.TargetKey = DataTarget.Insert(stateChange.SourceItem);
+                    Log.Debug($"INSERT: SourceKey = '{stateChange.SourceKey}', TargetKey = '{stateChange.TargetKey}'");
                     ExecuteNestedTasks?.Invoke(stateChange.SourceKey, stateChange.TargetKey);
                     break;
                 case OperationEnum.Update:
                     stateChange.TargetKey = DataTarget.Update(stateChange.SourceItem, stateChange.TargetItem);
+                    Log.Debug($"UPDATE: SourceKey = '{stateChange.SourceKey}', TargetKey = '{stateChange.TargetKey}'");
                     ExecuteNestedTasks?.Invoke(stateChange.SourceKey, stateChange.TargetKey);
                     break;
                 case OperationEnum.Delete:
+                    Log.Debug($"DELETE: SourceKey = '{stateChange.SourceKey}', TargetKey = '{stateChange.TargetKey}'");
                     ExecuteNestedTasks?.Invoke(stateChange.SourceKey, stateChange.TargetKey);
                     DataTarget.Delete(stateChange.TargetItem);
                     stateChange.TargetKey = null;
@@ -180,8 +203,7 @@ namespace ConsoleApplication17_pak.Package
             {
                 case OperationEnum.Insert:
                 case OperationEnum.Update:
-                    var syncMap = stateChange.SyncMap ??
-                                  new SyncMap { Id = Guid.NewGuid(), Key = stateChange.SourceKey };
+                    var syncMap = stateChange.SyncMap ?? SyncMap.Create(ProcessKey, stateChange.SourceKey);
                     syncMap.TargetKey = stateChange.TargetKey;
                     KeyMapStorage.CreateOrUpdate(syncMap);
                     break;
@@ -206,6 +228,7 @@ namespace ConsoleApplication17_pak.Package
                 case OperationEnum.Update:
 
                     var syncState = stateChange.LastState ?? stateChange.CurrentState;
+                    syncState.ProcessKey = ProcessKey;
                     syncState.Hash = stateChange.CurrentState.Hash;
                     StateStorage.CreateOrUpdate(syncState);
                     break;

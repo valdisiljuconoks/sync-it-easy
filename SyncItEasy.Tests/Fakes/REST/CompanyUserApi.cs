@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using SyncItEasy.Tests.Fakes.Poco;
 
 namespace SyncItEasy.Tests.Fakes.REST
@@ -30,18 +27,20 @@ namespace SyncItEasy.Tests.Fakes.REST
             Storage.Add(companyUser);
 
             return Get(companyId, companyUser.Id);
-
         }
+
         public static CompanyUser Post(int companyId, int companyUserId, CompanyUser companyUser)
         {
-            Storage.Add(companyUser);
-            return Get(companyId, companyUserId);
+            var existing = Get(companyId, companyUserId);
+            existing.FirstName = companyUser.FirstName;
+            existing.LastName = companyUser.LastName;
+            existing.Email = companyUser.Email;
+            return existing;
         }
+
         public static void Delete(int companyId, int companyUserId)
         {
             Storage.Remove(Get(companyId, companyUserId));
         }
-
-
     }
 }

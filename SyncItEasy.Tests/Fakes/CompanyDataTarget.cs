@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using ConsoleApplication17_pak.Package;
+﻿using SyncItEasy.Core.Package;
 using SyncItEasy.Tests.Fakes.Poco;
 using SyncItEasy.Tests.Fakes.REST;
 
@@ -8,8 +6,6 @@ namespace SyncItEasy.Tests.Fakes
 {
     public class CompanyDataTarget : IDataTarget<Organization, Company>
     {
-
-
         public string Insert(Organization source)
         {
             var company = new Company
@@ -25,6 +21,7 @@ namespace SyncItEasy.Tests.Fakes
         {
             target.RegistrationNumber = source.RegistrationNumber;
             target.Name = source.Name;
+            target = CompanyApi.Post(target.Id, target);
             return target.Id.ToString();
         }
 
