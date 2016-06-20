@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using Common.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SyncItEasy.Components.SyncKeyMap;
+using SyncItEasy.Components.SyncStateStorage;
 using SyncItEasy.Core.Package;
 using SyncItEasy.Tests.Fakes;
-using SyncItEasy.Tests.Fakes.Generic;
 using SyncItEasy.Tests.Fakes.Poco;
 using SyncItEasy.Tests.Fakes.REST;
 using SyncItEasy.Tests.Fakes.Storage;
@@ -23,8 +24,8 @@ namespace SyncItEasy.Tests
         {
             var organizationDataSource = new OrganizationDataSource();
             var companyDataTarget = new CompanyDataTarget();
-            var stateStorage = new StateStorage();
-            var keyMapStorage = new KeyMapStorage();
+            var stateStorage = new SyncStateStorage();
+            var keyMapStorage = new SyncKeyMapStorage();
 
             var pk = 1;
             for (var times = 0; times < 10; times++)
@@ -58,6 +59,7 @@ namespace SyncItEasy.Tests
                                 var itemNr = random.Next(0, OrganizationStorage.Storage.Count);
                                 var update = OrganizationStorage.Storage[itemNr];
                                 update.Name = Guid.NewGuid().ToString();
+                                Log.Debug($"Updated organization '{update.Id}'");
                             }
                             break;
 
@@ -67,14 +69,15 @@ namespace SyncItEasy.Tests
                             {
                                 var itemNr = random.Next(0, OrganizationStorage.Storage.Count);
                                 OrganizationStorage.Storage.RemoveAt(itemNr);
+                                Log.Debug($"Deleted organization");
                             }
                             break;
                     }
                 }
 
-                Log.Debug($"DONE PREPARING CHANGES");
+                
 
-                if (OrganizationStorage.Storage.Count > 0)
+                if (OrganizationStorage.Storage.Count > 0&&false)
                 {
                     var orgNr = random.Next(0, OrganizationStorage.Storage.Count);
 
@@ -122,7 +125,9 @@ namespace SyncItEasy.Tests
                     }
                 }
 
-                Action<string, string> nestedTasks = (sourceKey, targetKey) =>
+                Log.Debug($"DONE PREPARING CHANGES");
+
+                Action<string, string, Organization, Company> nestedTasks = (sourceKey, targetKey, sourceItem, targetItem) =>
                 {
                     Log.Debug($"Sync for org {sourceKey}, t= '{targetKey}' started");
 
@@ -134,6 +139,7 @@ namespace SyncItEasy.Tests
                     var companyUserStorage = new CompanyUserDataTarget(companyId);
 
                     var employeeSyncTask = new SyncTask<Employee, CompanyUser>(
+                        "EmployeeSyncTask",
                         employeeStorage,
                         companyUserStorage,
                         stateStorage,
@@ -145,6 +151,7 @@ namespace SyncItEasy.Tests
                 };
 
                 var orgSyncTask = new SyncTask<Organization, Company>(
+                    "OrganizationSyncTask",
                     organizationDataSource,
                     companyDataTarget,
                     stateStorage,
@@ -165,7 +172,6 @@ namespace SyncItEasy.Tests
                     throw new Exception("State not valid!", ex);
                 }
             }
-            CheckCurrentSyncState();
         }
 
         private void CheckCurrentSyncState()
@@ -175,8 +181,8 @@ namespace SyncItEasy.Tests
             var expectedCount = OrganizationStorage.Storage.Count +
                                 OrganizationStorage.Storage.SelectMany(x => x.Employees).Count();
 
-            Assert.AreEqual(expectedCount, StateStorage.Storage.Count);
-            Assert.AreEqual(expectedCount, KeyMapStorage.Storage.Count);
+            Assert.AreEqual(expectedCount, SyncStateStorage.Storage.Count);
+            Assert.AreEqual(expectedCount, SyncKeyMapStorage.Storage.Count);
 
             foreach (var organization in OrganizationStorage.Storage)
             {
@@ -187,15 +193,15 @@ namespace SyncItEasy.Tests
                     $"No matching company for reg nr '{organization.RegistrationNumber}' was found");
 
                 var keyMap =
-                    KeyMapStorage.Storage.SingleOrDefault(
+                    SyncKeyMapStorage.Storage.SingleOrDefault(
                         x => x.Key == organization.Id.ToString() && x.TargetKey == company.Id.ToString());
 
                 Assert.IsNotNull(keyMap, $"No matching keymap for reg nr '{organization.Id}' was found");
 
 
                 var syncState =
-                    StateStorage.Storage.SingleOrDefault(
-                        x => x.ProcessKey == "Organization=>Company:root" && x.Key == organization.Id.ToString());
+                    SyncStateStorage.Storage.SingleOrDefault(
+                        x => x.Context == "[OrganizationSyncTask]:[]" && x.Key == organization.Id.ToString());
 
                 Assert.IsNotNull(syncState, $"No matching sync state for org '{organization.Id}' was found");
 
@@ -207,90 +213,5 @@ namespace SyncItEasy.Tests
             }
         }
 
-
-        [TestMethod]
-        public void BarTest()
-        {
-            var organizationDataSource = new OrganizationDataSource();
-            var companyDataTarget = new CompanyDataTarget();
-            var stateStorage = new StateStorage();
-            var keyMapStorage = new KeyMapStorage();
-
-
-            OrganizationStorage.Storage.Add(new Organization
-            {
-                Id = 1,
-                Name = "kao",
-                RegistrationNumber = "kaoreg",
-                Employees = new List<Employee>
-                {
-                    new Employee
-                    {
-                        Id = 24,
-                        Firstname = "Vilis",
-                        Lastname = "Smits",
-                        Email = "will@smith.com"
-                    },
-                    new Employee
-                    {
-                        Id = 224,
-                        Firstname = "sVilis",
-                        Lastname = "sSmits",
-                        Email = "swill@smith.com"
-                    }
-                }
-            });
-
-            OrganizationStorage.Storage.Add(new Organization
-            {
-                Id = 2,
-                Name = "kao2",
-                RegistrationNumber = "kaoreg2",
-                Employees = new List<Employee>
-                {
-                    new Employee
-                    {
-                        Id = 15,
-                        Firstname = "Vilis2",
-                        Lastname = "Smits2",
-                        Email = "will@smith2.com"
-                    }
-                }
-            });
-
-
-            Action<string, string> nestedTasks = (sourceKey, targetKey) =>
-            {
-                var organizationId = int.Parse(sourceKey);
-                var employeeStorage = new EmployeeDataSource(organizationId);
-
-                var companyId = int.Parse(targetKey);
-                var companyUserStorage = new CompanyUserDataTarget(companyId);
-
-                var employeeSyncTask = new SyncTask<Employee, CompanyUser>(
-                    employeeStorage,
-                    companyUserStorage,
-                    stateStorage,
-                    keyMapStorage,
-                    null,
-                    sourceKey
-                    );
-
-                employeeSyncTask.Execute();
-            };
-
-            var orgSyncTask = new SyncTask<Organization, Company>(
-                organizationDataSource,
-                companyDataTarget,
-                stateStorage,
-                keyMapStorage,
-                nestedTasks,
-                null
-                );
-
-            orgSyncTask.Execute();
-
-            CheckCurrentSyncState();
-        }
     }
 }

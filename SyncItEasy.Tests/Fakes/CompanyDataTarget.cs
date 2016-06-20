@@ -36,7 +36,7 @@ namespace SyncItEasy.Tests.Fakes
             return CompanyApi.Get(id);
         }
 
-        public Company GetBySourceItem(Organization sourceItem)
+        public string GetKeyBySourceItem(Organization sourceItem)
         {
             return null;
             //return Storage

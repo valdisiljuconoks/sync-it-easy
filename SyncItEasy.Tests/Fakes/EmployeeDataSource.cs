@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using SyncItEasy.Components.SyncKey;
 using SyncItEasy.Core.Package;
-using SyncItEasy.Tests.Fakes.Generic;
 using SyncItEasy.Tests.Fakes.Poco;
 using SyncItEasy.Tests.Fakes.Storage;
 
@@ -20,7 +20,7 @@ namespace SyncItEasy.Tests.Fakes
             => OrganizationStorage.Storage.Where(x => x.Id == _organizationId).SelectMany(x => x.Employees);
 
 
-        public IEnumerable<IState> GetStates()
+        public IEnumerable<ISyncState> GetStates()
         {
             return Employees
                 .Select(x => BinaryChecksum.Calculate(x, x.Id));

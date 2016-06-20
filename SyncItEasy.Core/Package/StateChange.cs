@@ -4,9 +4,9 @@ namespace SyncItEasy.Core.Package
     {
         public string SourceKey { get; set; }
         public string TargetKey { get; set; }
-        public ISyncMap SyncMap { get; set; }
-        public IState LastState { get; set; }
-        public IState CurrentState { get; set; }
+        public ISyncKeyMap SyncKeyMap { get; set; }
+        public ISyncState LastSyncState { get; set; }
+        public ISyncState CurrentSyncState { get; set; }
         public TSource SourceItem { get; set; }
         public TTarget TargetItem { get; set; }
         public OperationEnum Operation { get; set; }

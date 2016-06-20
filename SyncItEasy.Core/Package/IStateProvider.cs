@@ -4,6 +4,6 @@ namespace SyncItEasy.Core.Package
 {
     public interface IStateProvider
     {
-        IEnumerable<IState> GetStates();
+        IEnumerable<ISyncState> GetStates();
     }
 }

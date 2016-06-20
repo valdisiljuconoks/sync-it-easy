@@ -44,7 +44,7 @@ namespace SyncItEasy.Tests.Fakes
             return CompanyUserApi.Get(_companyId, id);
         }
 
-        public CompanyUser GetBySourceItem(Employee sourceItem)
+        public string GetKeyBySourceItem(Employee sourceItem)
         {
             return null;
         }

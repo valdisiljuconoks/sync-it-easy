@@ -1,11 +1,8 @@
-using System;
-
 namespace SyncItEasy.Core.Package
 {
-    public interface ISyncMap
+    public interface ISyncKeyMap
     {
-        Guid Id { get; set; }
-        string ProcessKey { get; set; }
+        string Context { get; set; }
         string Key { get; set; }
         string TargetKey { get; set; }
     }

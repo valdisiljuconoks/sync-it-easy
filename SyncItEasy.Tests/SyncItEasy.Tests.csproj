@@ -60,13 +60,10 @@
   </Choose>
   <ItemGroup>
     <Compile Include="Fakes\CompanyUserDataTarget.cs" />
-    <Compile Include="Fakes\Generic\BinaryChecksum.cs" />
     <Compile Include="Fakes\EmployeeDataSource.cs" />
     <Compile Include="Fakes\Poco\Company.cs" />
     <Compile Include="Fakes\CompanyDataTarget.cs" />
-    <Compile Include="Fakes\Generic\StateStorage.cs" />
     <Compile Include="Fakes\Poco\Organization.cs" />
-    <Compile Include="Fakes\Generic\KeyMapStorage.cs" />
     <Compile Include="Fakes\Poco\Employee.cs" />
     <Compile Include="Fakes\Poco\CompanyUser.cs" />
     <Compile Include="Fakes\REST\CompanyApi.cs" />
@@ -81,6 +78,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\SyncItEasy.Components\SyncItEasy.Components.csproj">
+      <Project>{12b53d90-0583-4781-a017-d5ebf3eb4461}</Project>
+      <Name>SyncItEasy.Components</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SyncItEasy.Core\SyncItEasy.Core.csproj">
       <Project>{4d3289a2-1b10-4d3c-9651-281e3271411c}</Project>
       <Name>SyncItEasy.Core</Name>

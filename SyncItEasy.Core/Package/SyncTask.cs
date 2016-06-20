@@ -7,34 +7,37 @@ namespace SyncItEasy.Core.Package
 {
     public class SyncTask<TEntityA, TEntityB> where TEntityA : class where TEntityB : class
     {
+        protected readonly string SyntTaskId;
         protected readonly IDataSource<TEntityA> DataSource;
         protected readonly IDataTarget<TEntityA, TEntityB> DataTarget;
-        protected readonly Action<string, string> ExecuteNestedTasks;
-        protected readonly IKeyMapStorage KeyMapStorage;
-        protected readonly string PartitionKey;
-        protected readonly IStateStorage StateStorage;
+        protected readonly Action<string, string, TEntityA, TEntityB> ExecuteNestedTasks;
+        protected readonly string ParentContextKey;
+        protected readonly ISyncKeyMapStorage SyncKeyMapStorage;
+        protected readonly ISyncStateStorage SyncStateStorage;
 
         public SyncTask(
+            string syntTaskId,
             IDataSource<TEntityA> dataSource,
             IDataTarget<TEntityA, TEntityB> dataTarget,
-            IStateStorage stateStorage,
-            IKeyMapStorage keyMapStorage,
-            Action<string, string> executeNestedTasks,
-            string partitionKey
+            ISyncStateStorage syncStateStorage,
+            ISyncKeyMapStorage syncKeyMapStorage,
+            Action<string, string, TEntityA, TEntityB> executeNestedTasks = null,
+            string parentContextKey = null
             )
         {
+            SyntTaskId = syntTaskId;
             DataSource = dataSource;
             DataTarget = dataTarget;
-            StateStorage = stateStorage;
-            KeyMapStorage = keyMapStorage;
+            SyncStateStorage = syncStateStorage;
+            SyncKeyMapStorage = syncKeyMapStorage;
             ExecuteNestedTasks = executeNestedTasks;
-            PartitionKey = partitionKey;
+            ParentContextKey = parentContextKey;
         }
 
 
-        public ILog Log => LogManager.GetLogger(ProcessKey);
+        public ILog Log => LogManager.GetLogger(Context);
 
-        private string ProcessKey => $"{typeof(TEntityA).Name}=>{typeof(TEntityB).Name}:{PartitionKey ?? "root"}";
+        private string Context => $"[{SyntTaskId}]:[{ParentContextKey}]";
 
         public void Execute()
         {
@@ -45,9 +48,9 @@ namespace SyncItEasy.Core.Package
             foreach (var stateChange in stateChanges)
             {
                 ResolveSourceKey(stateChange);
-                ResolveTargetKey(stateChange);
-
                 LookupSourceItem(stateChange);
+
+                ResolveTargetKey(stateChange);
                 LookupTargetItem(stateChange);
 
                 DetectDataOperation(stateChange);
@@ -63,9 +66,8 @@ namespace SyncItEasy.Core.Package
         protected virtual List<StateChange<TEntityA, TEntityB>> GetStateChanges()
         {
             var result = new List<StateChange<TEntityA, TEntityB>>();
-
             var currentStates = DataSource.GetStates().ToList();
-            var lastStates = StateStorage.GetStates(ProcessKey).ToList();
+            var lastStates = SyncStateStorage.GetStates(Context).ToList();
 
             foreach (var currentState in currentStates)
             {
@@ -75,11 +77,11 @@ namespace SyncItEasy.Core.Package
                 {
                     var insert = new StateChange<TEntityA, TEntityB>
                     {
-                        CurrentState = currentState
+                        CurrentSyncState = currentState
                     };
                     result.Add(insert);
                     Log.Debug(
-                        $"Theoretical INSERT: CurrentState = '{insert.CurrentState}', LastState = '{insert.LastState}'");
+                        $"Theoretical INSERT: CurrentState = '{insert.CurrentSyncState}', LastState = '{insert.LastSyncState}'");
                 }
                 else
                 {
@@ -87,12 +89,12 @@ namespace SyncItEasy.Core.Package
                     {
                         var update = new StateChange<TEntityA, TEntityB>
                         {
-                            CurrentState = currentState,
-                            LastState = lastState
+                            CurrentSyncState = currentState,
+                            LastSyncState = lastState
                         };
                         result.Add(update);
                         Log.Debug(
-                            $"Theoretical UPDATE: CurrentState = '{update.CurrentState}', LastState = '{update.LastState}'");
+                            $"Theoretical UPDATE: CurrentState = '{update.CurrentSyncState}', LastState = '{update.LastSyncState}'");
                     }
                 }
             }
@@ -105,11 +107,11 @@ namespace SyncItEasy.Core.Package
                 {
                     var delete = new StateChange<TEntityA, TEntityB>
                     {
-                        LastState = lastState
+                        LastSyncState = lastState
                     };
                     result.Add(delete);
                     Log.Debug(
-                        $"Theoretical DELETE: CurrentState = '{delete.CurrentState}', LastState = '{delete.LastState}'");
+                        $"Theoretical DELETE: CurrentState = '{delete.CurrentSyncState}', LastState = '{delete.LastSyncState}'");
                 }
             }
             return result;
@@ -117,7 +119,7 @@ namespace SyncItEasy.Core.Package
 
         private void ResolveSourceKey(StateChange<TEntityA, TEntityB> stateChange)
         {
-            stateChange.SourceKey = stateChange.CurrentState?.Key ?? stateChange.LastState?.Key;
+            stateChange.SourceKey = stateChange.CurrentSyncState?.Key ?? stateChange.LastSyncState?.Key;
         }
 
         private void ResolveTargetKey(StateChange<TEntityA, TEntityB> stateChange)
@@ -125,9 +127,13 @@ namespace SyncItEasy.Core.Package
             if (stateChange.SourceKey == null)
                 return;
 
-            stateChange.SyncMap = KeyMapStorage.GetBySourceKey(ProcessKey, stateChange.SourceKey);
-            ;
-            stateChange.TargetKey = stateChange.SyncMap?.TargetKey;
+            stateChange.SyncKeyMap = SyncKeyMapStorage.GetBySourceKey(Context, stateChange.SourceKey);
+            stateChange.TargetKey = stateChange.SyncKeyMap?.TargetKey;
+
+            if (stateChange.SourceItem != null && stateChange.TargetItem == null)
+            {
+                stateChange.TargetKey = DataTarget.GetKeyBySourceItem(stateChange.SourceItem);
+            }
         }
 
         private void LookupSourceItem(StateChange<TEntityA, TEntityB> stateChange)
@@ -140,16 +146,10 @@ namespace SyncItEasy.Core.Package
 
         private void LookupTargetItem(StateChange<TEntityA, TEntityB> stateChange)
         {
-            if (stateChange.TargetKey != null)
-            {
-                stateChange.TargetItem = DataTarget.GetByKey(stateChange.TargetKey);
+            if (stateChange.TargetKey == null)
                 return;
-            }
 
-            if (stateChange.SourceItem != null)
-            {
-                stateChange.TargetItem = DataTarget.GetBySourceItem(stateChange.SourceItem);
-            }
+            stateChange.TargetItem = DataTarget.GetByKey(stateChange.TargetKey);
         }
 
         private void DetectDataOperation(StateChange<TEntityA, TEntityB> stateChange)
@@ -179,16 +179,16 @@ namespace SyncItEasy.Core.Package
                 case OperationEnum.Insert:
                     stateChange.TargetKey = DataTarget.Insert(stateChange.SourceItem);
                     Log.Debug($"INSERT: SourceKey = '{stateChange.SourceKey}', TargetKey = '{stateChange.TargetKey}'");
-                    ExecuteNestedTasks?.Invoke(stateChange.SourceKey, stateChange.TargetKey);
+                    ExecuteNestedTasks?.Invoke(stateChange.SourceKey, stateChange.TargetKey, stateChange.SourceItem, stateChange.TargetItem);
                     break;
                 case OperationEnum.Update:
                     stateChange.TargetKey = DataTarget.Update(stateChange.SourceItem, stateChange.TargetItem);
                     Log.Debug($"UPDATE: SourceKey = '{stateChange.SourceKey}', TargetKey = '{stateChange.TargetKey}'");
-                    ExecuteNestedTasks?.Invoke(stateChange.SourceKey, stateChange.TargetKey);
+                    ExecuteNestedTasks?.Invoke(stateChange.SourceKey, stateChange.TargetKey, stateChange.SourceItem, stateChange.TargetItem);
                     break;
                 case OperationEnum.Delete:
                     Log.Debug($"DELETE: SourceKey = '{stateChange.SourceKey}', TargetKey = '{stateChange.TargetKey}'");
-                    ExecuteNestedTasks?.Invoke(stateChange.SourceKey, stateChange.TargetKey);
+                    ExecuteNestedTasks?.Invoke(stateChange.SourceKey, stateChange.TargetKey, stateChange.SourceItem, stateChange.TargetItem);
                     DataTarget.Delete(stateChange.TargetItem);
                     stateChange.TargetKey = null;
                     break;
@@ -203,16 +203,23 @@ namespace SyncItEasy.Core.Package
             {
                 case OperationEnum.Insert:
                 case OperationEnum.Update:
-                    var syncMap = stateChange.SyncMap ?? SyncMap.Create(ProcessKey, stateChange.SourceKey);
-                    syncMap.TargetKey = stateChange.TargetKey;
-                    KeyMapStorage.CreateOrUpdate(syncMap);
+                    if (stateChange.SyncKeyMap == null)
+                    {
+                        SyncKeyMapStorage.Create(Context, stateChange.SourceKey, stateChange.TargetKey);
+                    }
+                    else
+                    {
+                        var syncKeyMap = stateChange.SyncKeyMap;
+                        syncKeyMap.TargetKey = stateChange.TargetKey;
+                        SyncKeyMapStorage.Update(syncKeyMap);
+                    }
                     break;
 
                 case OperationEnum.None:
                 case OperationEnum.Delete:
-                    if (stateChange.SyncMap != null)
+                    if (stateChange.SyncKeyMap != null)
                     {
-                        KeyMapStorage.Delete(stateChange.SyncMap);
+                        SyncKeyMapStorage.Delete(stateChange.SyncKeyMap);
                     }
                     break;
                 default:
@@ -227,17 +234,25 @@ namespace SyncItEasy.Core.Package
                 case OperationEnum.Insert:
                 case OperationEnum.Update:
 
-                    var syncState = stateChange.LastState ?? stateChange.CurrentState;
-                    syncState.ProcessKey = ProcessKey;
-                    syncState.Hash = stateChange.CurrentState.Hash;
-                    StateStorage.CreateOrUpdate(syncState);
+                    if (stateChange.LastSyncState == null)
+                    {
+                        SyncStateStorage.Create(Context, stateChange.CurrentSyncState.Key,
+                            stateChange.CurrentSyncState.Hash);
+                    }
+                    else
+                    {
+                        var syncState = stateChange.LastSyncState;
+                        syncState.Context = Context;
+                        syncState.Hash = stateChange.CurrentSyncState.Hash;
+                        SyncStateStorage.Update(syncState);
+                    }
                     break;
 
                 case OperationEnum.None:
                 case OperationEnum.Delete:
-                    if (stateChange.LastState != null)
+                    if (stateChange.LastSyncState != null)
                     {
-                        StateStorage.Delete(stateChange.LastState);
+                        SyncStateStorage.Delete(stateChange.LastSyncState);
                     }
                     break;
                 default:

@@ -4,6 +4,6 @@ namespace SyncItEasy.Core.Package
 {
     public interface IStoredStateProvider
     {
-        IEnumerable<IState> GetStates(string processKey);
+        IEnumerable<ISyncState> GetStates(string context);
     }
 }

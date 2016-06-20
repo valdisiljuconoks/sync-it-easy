@@ -12,6 +12,21 @@
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -54,22 +69,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Config\SyncTaskConfig.cs" />
     <Compile Include="Extensions\DictionaryExtensions.cs" />
     <Compile Include="Package\IDataSource.cs" />
     <Compile Include="Package\IDataTarget.cs" />
     <Compile Include="Package\IStateProvider.cs" />
     <Compile Include="Package\IStoredStateProvider.cs" />
+    <Compile Include="Package\IStoredSyncState.cs" />
     <Compile Include="Package\OperationEnum.cs" />
-    <Compile Include="Package\State.cs" />
     <Compile Include="Package\ILookupBySourceItem.cs" />
-    <Compile Include="Package\IState.cs" />
-    <Compile Include="Package\ISyncMap.cs" />
-    <Compile Include="Package\IKeyMapStorage.cs" />
-    <Compile Include="Package\IStateStorage.cs" />
+    <Compile Include="Package\ISyncState.cs" />
+    <Compile Include="Package\ISyncKeyMap.cs" />
+    <Compile Include="Package\ISyncKeyMapStorage.cs" />
+    <Compile Include="Package\ISyncStateStorage.cs" />
     <Compile Include="Package\ILookupByKey.cs" />
-    <Compile Include="Package\ISyncStateStore.cs" />
     <Compile Include="Package\IEntityPersister.cs" />
-    <Compile Include="Package\SyncMap.cs" />
     <Compile Include="Package\StateChange.cs" />
     <Compile Include="Package\SyncTask.cs" />
     <Compile Include="Program.cs" />
@@ -79,7 +93,22 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.5.2">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.5.2 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>xcopy $(TargetPath) "C:\Projects\Git\kolumbus\packages\SyncItEasy.Core.1.0.3\lib\net452" /Y</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

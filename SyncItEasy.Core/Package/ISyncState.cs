@@ -1,8 +1,8 @@
 namespace SyncItEasy.Core.Package
 {
-    public interface IState
+    public interface ISyncState
     {
-        string ProcessKey { get; set; }
+        string Context { get; set; }
         string Key { get; set; }
         string Hash { get; set; }
     }
