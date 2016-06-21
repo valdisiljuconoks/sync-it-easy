@@ -10,7 +10,7 @@ namespace SyncWhatever.Components.SyncStateStorage
 
         public override string ToString()
         {
-            return $"{Context}:{Key} => {Hash}";
+            return $"{Context} || {Key} || {Hash}";
         }
     }
 }

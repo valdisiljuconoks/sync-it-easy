@@ -75,9 +75,9 @@ namespace SyncWhatever.Tests
                     }
                 }
 
-                
 
-                if (OrganizationStorage.Storage.Count > 0&&false)
+
+                if (OrganizationStorage.Storage.Count > 0)
                 {
                     var orgNr = random.Next(0, OrganizationStorage.Storage.Count);
 
@@ -176,6 +176,20 @@ namespace SyncWhatever.Tests
 
         private void CheckCurrentSyncState()
         {
+            Log.Info("------------------------------------------------");
+            Log.Info($"OrganizationStorage.Storage:");
+            OrganizationStorage.Storage.ForEach(x => Log.Info(x));
+            Log.Info("------------------------------------------------");
+            Log.Info($"CompanyApi.Storage:");
+            CompanyApi.Storage.ForEach(x => Log.Info(x));
+            Log.Info("------------------------------------------------");
+            Log.Info($"SyncKeyMapStorage.Storage:");
+            SyncKeyMapStorage.Storage.ForEach(x => Log.Info(x));
+            Log.Info("------------------------------------------------");
+            Log.Info($"SyncStateStorage.Storage:");
+            SyncStateStorage.Storage.ForEach(x => Log.Info(x));
+            Log.Info("------------------------------------------------");
+            
             Assert.AreEqual(OrganizationStorage.Storage.Count, CompanyApi.Storage.Count);
 
             var expectedCount = OrganizationStorage.Storage.Count +

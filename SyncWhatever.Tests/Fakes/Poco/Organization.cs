@@ -10,5 +10,10 @@ namespace SyncWhatever.Tests.Fakes.Poco
         public string Name { get; set; }
         public string RegistrationNumber { get; set; }
         public List<Employee> Employees { get; set; } = new List<Employee>();
+
+        public override string ToString()
+        {
+            return $"{Id} || {Name} || {RegistrationNumber}";
+        }
     }
 }

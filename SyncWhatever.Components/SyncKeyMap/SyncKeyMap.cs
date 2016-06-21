@@ -7,5 +7,10 @@ namespace SyncWhatever.Components.SyncKeyMap
         public string Context { get; set; }
         public string Key { get; set; }
         public string TargetKey { get; set; }
+
+        public override string ToString()
+        {
+            return $"{Context} || {Key} || {TargetKey}";
+        }
     }
 }

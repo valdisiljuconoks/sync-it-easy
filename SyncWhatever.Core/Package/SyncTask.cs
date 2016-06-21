@@ -130,7 +130,7 @@ namespace SyncWhatever.Core.Package
             stateChange.SyncKeyMap = SyncKeyMapStorage.GetBySourceKey(Context, stateChange.SourceKey);
             stateChange.TargetKey = stateChange.SyncKeyMap?.TargetKey;
 
-            if (stateChange.SourceItem != null && stateChange.TargetItem == null)
+            if (stateChange.SourceItem != null && stateChange.TargetKey == null)
             {
                 stateChange.TargetKey = DataTarget.GetKeyBySourceItem(stateChange.SourceItem);
             }
