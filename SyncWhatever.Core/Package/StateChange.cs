@@ -10,5 +10,10 @@ namespace SyncWhatever.Core.Package
         public TSource SourceItem { get; set; }
         public TTarget TargetItem { get; set; }
         public OperationEnum Operation { get; set; }
+
+        public override string ToString()
+        {
+            return $"{nameof(LastSyncState)}: {LastSyncState}, {nameof(CurrentSyncState)}: {CurrentSyncState}";
+        }
     }
 }
