@@ -15,6 +15,7 @@ namespace SyncWhatever.Core.Package
         protected readonly ISyncKeyMapStorage SyncKeyMapStorage;
         protected readonly ISyncStateStorage SyncStateStorage;
         protected readonly string SyntTaskId;
+        protected readonly bool FailOnError;
 
         public SyncTask(
             string syntTaskId,
@@ -23,7 +24,8 @@ namespace SyncWhatever.Core.Package
             ISyncStateStorage syncStateStorage,
             ISyncKeyMapStorage syncKeyMapStorage,
             Action<string, string, TEntityA, TEntityB> executeNestedTasks = null,
-            string parentContextKey = null
+            string parentContextKey = null,
+            bool failOnError = false
         )
         {
             SyntTaskId = syntTaskId;
@@ -33,6 +35,7 @@ namespace SyncWhatever.Core.Package
             SyncKeyMapStorage = syncKeyMapStorage;
             ExecuteNestedTasks = executeNestedTasks;
             ParentContextKey = parentContextKey;
+            FailOnError = failOnError;
         }
 
 
@@ -48,19 +51,30 @@ namespace SyncWhatever.Core.Package
 
             foreach (var stateChange in stateChanges)
             {
-                ResolveSourceKey(stateChange);
-                LookupSourceItem(stateChange);
+                try
+                {
+                    ResolveSourceKey(stateChange);
+                    LookupSourceItem(stateChange);
 
-                ResolveTargetKey(stateChange);
-                LookupTargetItem(stateChange);
+                    ResolveTargetKey(stateChange);
+                    LookupTargetItem(stateChange);
 
-                LookupTargetItemFallback(stateChange);
-                DetectDataOperation(stateChange);
+                    LookupTargetItemFallback(stateChange);
+                    DetectDataOperation(stateChange);
 
-                PerformDataOperation(stateChange);
+                    PerformDataOperation(stateChange);
 
-                UpdateSyncMap(stateChange);
-                UpdateSyncState(stateChange);
+                    UpdateSyncMap(stateChange);
+                    UpdateSyncState(stateChange);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex);
+                    if(FailOnError)
+                    {
+                        throw;
+                    }
+                }
             }
 
             Log.Debug($"==== Sync done ====");
