@@ -14,11 +14,11 @@ namespace SyncWhatever.Core.Package
         protected readonly string ParentContextKey;
         protected readonly ISyncKeyMapStorage SyncKeyMapStorage;
         protected readonly ISyncStateStorage SyncStateStorage;
-        protected readonly string SyntTaskId;
+        protected readonly string SyncTaskId;
         protected readonly bool FailOnError;
 
         public SyncTask(
-            string syntTaskId,
+            string syncTaskId,
             IDataSource<TEntityA> dataSource,
             IDataTarget<TEntityA, TEntityB> dataTarget,
             ISyncStateStorage syncStateStorage,
@@ -28,7 +28,7 @@ namespace SyncWhatever.Core.Package
             bool failOnError = false
         )
         {
-            SyntTaskId = syntTaskId;
+            SyncTaskId = syncTaskId;
             DataSource = dataSource;
             DataTarget = dataTarget;
             SyncStateStorage = syncStateStorage;
@@ -39,13 +39,13 @@ namespace SyncWhatever.Core.Package
         }
 
 
-        public ILog Log => LogManager.GetLogger(Context);
+        public ILog Log => LogManager.GetLogger(SyncTaskId);
 
-        private string Context => $"[{SyntTaskId}]:[{ParentContextKey}]";
+        private string Context => $"[{SyncTaskId}]:[{ParentContextKey}]";
 
         public void Execute()
         {
-            Log.Debug($"==== Sync started ====");
+            Log.Debug("==== Sync started ====");
 
             var stateChanges = GetStateChanges();
 
@@ -76,7 +76,7 @@ namespace SyncWhatever.Core.Package
                 }
             }
 
-            Log.Debug($"==== Sync done ====");
+            Log.Debug("==== Sync done ====");
         }
 
         protected virtual List<StateChange<TEntityA, TEntityB>> GetStateChanges()

@@ -13,7 +13,7 @@ namespace SyncWhatever.Core.Package
 
         public override string ToString()
         {
-            return $"{nameof(LastSyncState)}: {LastSyncState}, {nameof(CurrentSyncState)}: {CurrentSyncState}";
+            return $"{nameof(SourceKey)}: {SourceKey}, {nameof(TargetKey)}: {TargetKey}, {nameof(SyncKeyMap)}: {SyncKeyMap}, {nameof(LastSyncState)}: {LastSyncState}, {nameof(CurrentSyncState)}: {CurrentSyncState}, {nameof(SourceItem)}: {SourceItem}, {nameof(TargetItem)}: {TargetItem}, {nameof(Operation)}: {Operation}";
         }
     }
 }
