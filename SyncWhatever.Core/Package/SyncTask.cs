@@ -49,18 +49,14 @@ namespace SyncWhatever.Core.Package
             foreach (var stateChange in stateChanges)
             {
                 ResolveSourceKey(stateChange);
-
                 LookupSourceItem(stateChange);
-                Log.Debug($"Looked up source item: {stateChange?.SourceItem}");
 
                 ResolveTargetKey(stateChange);
-                Log.Debug($"Resolved target key: {stateChange?.TargetKey}");
                 LookupTargetItem(stateChange);
-                Log.Debug($"Looked up target item: {stateChange?.SourceItem}");
+
                 LookupTargetItemFallback(stateChange);
-                Log.Debug($"Looked up target item: {stateChange?.SourceItem}");
                 DetectDataOperation(stateChange);
-                Log.Debug($"Detected data operation: {stateChange?.SourceItem}");
+
                 PerformDataOperation(stateChange);
 
                 UpdateSyncMap(stateChange);
