@@ -58,10 +58,9 @@ namespace SyncWhatever.Core.Package
 
                     ResolveTargetKey(stateChange);
                     LookupTargetItem(stateChange);
-
                     LookupTargetItemFallback(stateChange);
-                    DetectDataOperation(stateChange);
 
+                    DetectDataOperation(stateChange);
                     PerformDataOperation(stateChange);
 
                     UpdateSyncMap(stateChange);
@@ -175,6 +174,7 @@ namespace SyncWhatever.Core.Package
                 if (stateChange.TargetKey == null)
                     return;
 
+                stateChange.TargetItem = DataTarget.GetByKey(stateChange.TargetKey);
                 Log.Debug($"{stateChange}");
             }, nameof(LookupTargetItem));
         }
