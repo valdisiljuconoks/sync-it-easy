@@ -52,6 +52,7 @@ namespace SyncWhatever.Core.Package
 
                 ResolveTargetKey(stateChange);
                 LookupTargetItem(stateChange);
+                LookupTargetItemFallback(stateChange);
 
                 DetectDataOperation(stateChange);
                 PerformDataOperation(stateChange);
@@ -129,11 +130,6 @@ namespace SyncWhatever.Core.Package
 
             stateChange.SyncKeyMap = SyncKeyMapStorage.GetBySourceKey(Context, stateChange.SourceKey);
             stateChange.TargetKey = stateChange.SyncKeyMap?.TargetKey;
-
-            if (stateChange.SourceItem != null && stateChange.TargetKey == null)
-            {
-                stateChange.TargetKey = DataTarget.GetKeyBySourceItem(stateChange.SourceItem);
-            }
         }
 
         private void LookupSourceItem(StateChange<TEntityA, TEntityB> stateChange)
@@ -150,6 +146,19 @@ namespace SyncWhatever.Core.Package
                 return;
 
             stateChange.TargetItem = DataTarget.GetByKey(stateChange.TargetKey);
+        }
+
+        private void LookupTargetItemFallback(StateChange<TEntityA, TEntityB> stateChange)
+        {
+            if (stateChange.TargetItem != null)
+                return;
+
+            if (stateChange.SourceItem != null)
+            {
+                // lets try to get target item key by source item
+                stateChange.TargetKey = DataTarget.GetKeyBySourceItem(stateChange.SourceItem);
+                LookupTargetItem(stateChange);
+            }
         }
 
         private void DetectDataOperation(StateChange<TEntityA, TEntityB> stateChange)
