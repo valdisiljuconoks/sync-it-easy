@@ -68,7 +68,7 @@ namespace SyncWhatever.Core.Package
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex);
+                    Log.Error($"Failed to sync: {stateChange}. Error: {ex}");
                     if(FailOnError)
                     {
                         throw;
@@ -130,6 +130,8 @@ namespace SyncWhatever.Core.Package
                         $"Theoretical DELETE: CurrentState = '{delete.CurrentSyncState}', LastState = '{delete.LastSyncState}'");
                 }
             }
+
+            Log.Info($"Detected {result.Count} changes. Inserts: {result.Count(c => c.Operation == OperationEnum.Insert)}, Updates: {result.Count(c => c.Operation == OperationEnum.Update)}, Deletes: {result.Count(c => c.Operation == OperationEnum.Delete)}, Unknowns: {result.Count(c => c.Operation == OperationEnum.None)}");
             return result;
         }
 
@@ -224,6 +226,8 @@ namespace SyncWhatever.Core.Package
         {
             TimedAction(() =>
             {
+                Log.Debug($"Performing Data Operation ({stateChange.Operation}) on Entity: {stateChange}");
+
                 switch (stateChange.Operation)
                 {
                     case OperationEnum.Insert:
@@ -251,7 +255,6 @@ namespace SyncWhatever.Core.Package
                     case OperationEnum.None:
                         break;
                 }
-                Log.Debug($"{stateChange}");
             }, nameof(PerformDataOperation));
         }
 
