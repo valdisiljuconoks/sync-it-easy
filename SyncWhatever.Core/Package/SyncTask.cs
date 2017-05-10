@@ -16,6 +16,8 @@ namespace SyncWhatever.Core.Package
         protected readonly ISyncStateStorage SyncStateStorage;
         protected readonly string SyncTaskId;
         protected readonly bool FailOnError;
+        private readonly Action<TEntityA, TEntityB, Exception> _failedCallback;
+        private readonly Action<TEntityA, TEntityB> _successCallback;
 
         public SyncTask(
             string syncTaskId,
@@ -25,7 +27,9 @@ namespace SyncWhatever.Core.Package
             ISyncKeyMapStorage syncKeyMapStorage,
             Action<string, string, TEntityA, TEntityB> executeNestedTasks = null,
             string parentContextKey = null,
-            bool failOnError = false
+            bool failOnError = false,
+            Action<TEntityA, TEntityB, Exception> failedCallback = null,
+            Action<TEntityA, TEntityB> successCallback = null
         )
         {
             SyncTaskId = syncTaskId;
@@ -36,6 +40,8 @@ namespace SyncWhatever.Core.Package
             ExecuteNestedTasks = executeNestedTasks;
             ParentContextKey = parentContextKey;
             FailOnError = failOnError;
+            _failedCallback = failedCallback;
+            _successCallback = successCallback;
         }
 
 
@@ -65,9 +71,14 @@ namespace SyncWhatever.Core.Package
 
                     UpdateSyncMap(stateChange);
                     UpdateSyncState(stateChange);
+
+                    _successCallback?.Invoke(stateChange.SourceItem, stateChange.TargetItem);
                 }
                 catch (Exception ex)
                 {
+                    // invoke callback (if any)
+                    _failedCallback?.Invoke(stateChange.SourceItem, stateChange.TargetItem, ex);
+
                     Log.Error($"Failed to sync: {stateChange}. Error: {ex}");
                     if(FailOnError)
                     {
