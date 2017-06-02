@@ -10,7 +10,7 @@ namespace SyncWhatever.Core.Package
     {
         protected readonly IDataSource<TEntityA> DataSource;
         protected readonly IDataTarget<TEntityA, TEntityB> DataTarget;
-        protected readonly Action<string, string, TEntityA, TEntityB> ExecuteNestedTasks;
+        protected readonly Action<string, string, TEntityA, TEntityB, StateChange<TEntityA, TEntityB>> ExecuteNestedTasks;
         protected readonly string ParentContextKey;
         protected readonly ISyncKeyMapStorage SyncKeyMapStorage;
         protected readonly ISyncStateStorage SyncStateStorage;
@@ -25,7 +25,7 @@ namespace SyncWhatever.Core.Package
             IDataTarget<TEntityA, TEntityB> dataTarget,
             ISyncStateStorage syncStateStorage,
             ISyncKeyMapStorage syncKeyMapStorage,
-            Action<string, string, TEntityA, TEntityB> executeNestedTasks = null,
+            Action<string, string, TEntityA, TEntityB, StateChange<TEntityA, TEntityB>> executeNestedTasks = null,
             string parentContextKey = null,
             bool failOnError = false,
             Action<TEntityA, TEntityB, Exception> failedCallback = null,
@@ -246,20 +246,20 @@ namespace SyncWhatever.Core.Package
                         Log.Debug(
                             $"INSERT: SourceKey = '{stateChange.SourceKey}', TargetKey = '{stateChange.TargetKey}'");
                         ExecuteNestedTasks?.Invoke(stateChange.SourceKey, stateChange.TargetKey, stateChange.SourceItem,
-                            stateChange.TargetItem);
+                            stateChange.TargetItem, stateChange);
                         break;
                     case OperationEnum.Update:
                         stateChange.TargetKey = DataTarget.Update(stateChange.SourceItem, stateChange.TargetItem);
                         Log.Debug(
                             $"UPDATE: SourceKey = '{stateChange.SourceKey}', TargetKey = '{stateChange.TargetKey}'");
                         ExecuteNestedTasks?.Invoke(stateChange.SourceKey, stateChange.TargetKey, stateChange.SourceItem,
-                            stateChange.TargetItem);
+                            stateChange.TargetItem, stateChange);
                         break;
                     case OperationEnum.Delete:
                         Log.Debug(
                             $"DELETE: SourceKey = '{stateChange.SourceKey}', TargetKey = '{stateChange.TargetKey}'");
                         ExecuteNestedTasks?.Invoke(stateChange.SourceKey, stateChange.TargetKey, stateChange.SourceItem,
-                            stateChange.TargetItem);
+                            stateChange.TargetItem, stateChange);
                         DataTarget.Delete(stateChange.TargetItem);
                         stateChange.TargetKey = null;
                         break;
